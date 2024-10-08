@@ -30,7 +30,7 @@ namespace m2
      private:
         unsigned int nrInstances;
         unsigned int maxInstances;
-        float shrink;
-
+        float shrink = 1.0f;
+        float shrinkMin = -10.0f, shrinkMax = 10.0f;
     };
 }   // namespace m2
