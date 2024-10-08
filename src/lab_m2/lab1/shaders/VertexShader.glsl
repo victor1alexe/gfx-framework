@@ -1,4 +1,4 @@
-#version 330
+#version 430
 
 // Input
 layout(location = 0) in vec3 v_position;
@@ -9,12 +9,12 @@ layout(location = 2) in vec2 v_texture_coord;
 uniform mat4 Model;
 
 // Output
-out vec2 g_texture_coord;
+layout(location = 0) out vec2 texture_coord;
 
 
 void main()
 {
-    g_texture_coord = v_texture_coord;
+    texture_coord = v_texture_coord;
 
     gl_Position = Model * vec4(v_position, 1);
 }

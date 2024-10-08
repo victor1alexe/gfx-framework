@@ -221,7 +221,9 @@ void Lab9::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 & modelM
         // - activate texture location 0
         // - bind the texture1 ID
         // - send theuniform value
-
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1->GetTextureID());
+        glUniform1i(glGetUniformLocation(shader->GetProgramID(), "texture_1"), 0);
     }
 
     if (texture2)
@@ -230,7 +232,9 @@ void Lab9::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 & modelM
         // - activate texture location 1
         // - bind the texture2 ID
         // - send the uniform value
-
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2->GetTextureID());
+        glUniform1i(glGetUniformLocation(shader->GetProgramID(), "texture_2"), 1);
     }
 
     // Draw the object

@@ -1,4 +1,4 @@
-#version 330
+#version 430
 
 // Input
 layout(location = 0) in vec3 v_position;
@@ -6,7 +6,7 @@ layout(location = 1) in vec3 v_normal;
 layout(location = 2) in vec2 v_texture_coord;
 
 // Output
-out vec2 texture_coord;
+layout(location = 0) out vec2 texture_coord;
 
 
 void main()

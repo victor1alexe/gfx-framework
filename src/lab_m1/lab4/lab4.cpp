@@ -97,6 +97,7 @@ void Lab4::Update(float deltaTimeSeconds)
     glViewport(miniViewportArea.x, miniViewportArea.y, miniViewportArea.width, miniViewportArea.height);
 
     // TODO(student): render the scene again, in the new viewport
+    RenderScene();
     DrawCoordinateSystem();
 }
 

@@ -1,4 +1,4 @@
-#version 330
+#version 430
 
 // Uniform properties
 uniform sampler2D texture_position;

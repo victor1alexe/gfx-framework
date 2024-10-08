@@ -1,9 +1,9 @@
-#version 330
+#version 430
 
 // Input
-in vec2 text_coord;
-in vec3 world_position;
-in vec3 world_normal;
+layout(location = 0) in vec2 text_coord;
+layout(location = 1) in vec3 world_position;
+layout(location = 2) in vec3 world_normal;
 
 // Uniform properties
 uniform sampler2D u_texture_0;

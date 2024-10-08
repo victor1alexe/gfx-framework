@@ -15,6 +15,6 @@ layout(location = 0) out vec4 out_color;
 void main()
 {
     // TODO(student): Calculate the out_color using the texture2D() function.
-    out_color = vec4(1);
+    out_color = texture2D(texture_1, texcoord);
 
 }

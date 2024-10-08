@@ -9,7 +9,11 @@ namespace transform2D
     inline glm::mat3 Translate(float translateX, float translateY)
     {
         // TODO(student): Implement the translation matrix
-        return glm::mat3(1);
+        return glm::transpose(
+            glm::mat3(1, 0, translateX,
+                        0, 1, translateY,
+                        0, 0, 1)
+        );
 
     }
 

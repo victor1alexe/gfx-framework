@@ -139,32 +139,33 @@ void Lab5::OnInputUpdate(float deltaTime, int mods)
 
         if (window->KeyHold(GLFW_KEY_W)) {
             // TODO(student): Translate the camera forward
-
+            //camera->MoveForward(cameraSpeed * deltaTime);
+            camera->TranslateForward(cameraSpeed * deltaTime);
         }
 
         if (window->KeyHold(GLFW_KEY_A)) {
             // TODO(student): Translate the camera to the left
-
+            camera->TranslateRight(-cameraSpeed * deltaTime);
         }
 
         if (window->KeyHold(GLFW_KEY_S)) {
             // TODO(student): Translate the camera backward
-
+            camera->TranslateForward(-cameraSpeed * deltaTime);
         }
 
         if (window->KeyHold(GLFW_KEY_D)) {
             // TODO(student): Translate the camera to the right
-
+            camera->TranslateRight(cameraSpeed * deltaTime);
         }
 
         if (window->KeyHold(GLFW_KEY_Q)) {
             // TODO(student): Translate the camera downward
-
+            camera->TranslateUpward(-cameraSpeed * deltaTime);
         }
 
         if (window->KeyHold(GLFW_KEY_E)) {
             // TODO(student): Translate the camera upward
-
+            camera->TranslateUpward(cameraSpeed * deltaTime);
         }
     }
 
@@ -208,7 +209,8 @@ void Lab5::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
             // TODO(student): Rotate the camera in first-person mode around
             // OX and OY using `deltaX` and `deltaY`. Use the sensitivity
             // variables for setting up the rotation speed.
-
+            camera->RotateFirstPerson_OY(-sensivityOX * deltaX);
+            camera->RotateFirstPerson_OX(-sensivityOY * deltaY);
         }
 
         if (window->GetSpecialKeyState() & GLFW_MOD_CONTROL) {
@@ -216,7 +218,8 @@ void Lab5::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
             // TODO(student): Rotate the camera in third-person mode around
             // OX and OY using `deltaX` and `deltaY`. Use the sensitivity
             // variables for setting up the rotation speed.
-
+            camera->RotateThirdPerson_OX(-sensivityOY * deltaY);
+            camera->RotateThirdPerson_OY(-sensivityOX * deltaX);
         }
     }
 }

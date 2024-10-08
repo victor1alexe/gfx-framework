@@ -1,4 +1,4 @@
-#version 330
+#version 430
 
 // Input
 in vec2 texture_coord;

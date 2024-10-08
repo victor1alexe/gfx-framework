@@ -35,6 +35,6 @@ namespace m1
         float angularStep;
 
         // TODO(student): If you need any other class variables, define them here.
-
+        std::unordered_map<std::string, glm::mat3> models;
     };
 }   // namespace m1

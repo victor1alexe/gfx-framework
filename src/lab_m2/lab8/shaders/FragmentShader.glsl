@@ -1,7 +1,7 @@
-#version 330
+#version 410
 
 // Input
-in vec2 texture_coord;
+layout(location = 0) in vec2 texture_coord;
 
 // Uniform properties
 uniform sampler2D textureImage;

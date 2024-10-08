@@ -57,12 +57,15 @@ void Lab3::Init()
 
     Mesh* square1 = object2D::CreateSquare("square1", corner, squareSide, glm::vec3(1, 0, 0), true);
     AddMeshToList(square1);
+    models[square1->GetMeshID()] = glm::mat3(1) * transform2D::Translate(150, 250);
 
     Mesh* square2 = object2D::CreateSquare("square2", corner, squareSide, glm::vec3(0, 1, 0));
     AddMeshToList(square2);
+    models[square2->GetMeshID()] = glm::mat3(1) * transform2D::Translate(400, 250);
 
     Mesh* square3 = object2D::CreateSquare("square3", corner, squareSide, glm::vec3(0, 0, 1));
     AddMeshToList(square3);
+    models[square3->GetMeshID()] = glm::mat3(1) * transform2D::Translate(650, 250);
 }
 
 
@@ -84,30 +87,33 @@ void Lab3::Update(float deltaTimeSeconds)
     // in order to create animations. Use the class variables in the
     // class header, and if you need more of them to complete the task,
     // add them over there!
+    translateX += 20.0 * deltaTimeSeconds;
+    translateY += 20.0 * deltaTimeSeconds;
 
-    modelMatrix = glm::mat3(1);
-    modelMatrix *= transform2D::Translate(150, 250);
+    scaleX += 20.0 * deltaTimeSeconds;
+    scaleY += 20.0 * deltaTimeSeconds;
+
+    angularStep = (angularStep + 20.0 * deltaTimeSeconds);
+    if (angularStep > 2 * 3.14)
+        angularStep = 0.0f;
+
     // TODO(student): Create animations by multiplying the current
     // transform matrix with the matrices you just implemented.
     // Remember, the last matrix in the chain will take effect first!
+    models["square1"] = transform2D::Translate(150 + translateX, 250 + translateY);
 
-    RenderMesh2D(meshes["square1"], shaders["VertexColor"], modelMatrix);
-
-    modelMatrix = glm::mat3(1);
-    modelMatrix *= transform2D::Translate(400, 250);
+    RenderMesh2D(meshes["square1"], shaders["VertexColor"], models["square1"]);
     // TODO(student): Create animations by multiplying the current
     // transform matrix with the matrices you just implemented
     // Remember, the last matrix in the chain will take effect first!
 
-    RenderMesh2D(meshes["square2"], shaders["VertexColor"], modelMatrix);
+    RenderMesh2D(meshes["square2"], shaders["VertexColor"], models["square2"]);
 
-    modelMatrix = glm::mat3(1);
-    modelMatrix *= transform2D::Translate(650, 250);
     // TODO(student): Create animations by multiplying the current
     // transform matrix with the matrices you just implemented
     // Remember, the last matrix in the chain will take effect first!
 
-    RenderMesh2D(meshes["square3"], shaders["VertexColor"], modelMatrix);
+    RenderMesh2D(meshes["square3"], shaders["VertexColor"], models["square3"]);
 }
 
 

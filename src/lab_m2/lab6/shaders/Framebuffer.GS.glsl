@@ -1,4 +1,4 @@
-#version 330
+#version 430
 
 layout(triangles) in;
 // TODO(student): Update max_vertices
