@@ -36,10 +36,9 @@ void main()
     // TODO(student): Second, modify the points so that the
     // triangle shrinks relative to its center
     vec3 tri_center = vec3((p1.x + p2.x + p3.x) / 3, (p1.y + p2.y + p3.y) / 3, (p1.z + p2.z + p3.z) / 3);
-    p1 += tri_center * shrink;
-    p2 += tri_center * shrink;
-    p3 += tri_center * shrink;
-
+    p1 += (p1 - tri_center) * shrink;
+    p2 += (p2 - tri_center) * shrink;
+    p3 += (p3 - tri_center) * shrink;
 
     int current_line = 0;
     int current_col = -1;

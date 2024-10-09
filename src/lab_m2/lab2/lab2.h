@@ -34,5 +34,7 @@ namespace m2
         glm::vec3 control_p0, control_p1, control_p2, control_p3;
         unsigned int no_of_generated_points, no_of_instances;
         float max_translate, max_rotate;
+        unsigned int max_no_of_generated_points = 256;
+        unsigned int surface_type = 0;
     };
 }   // namespace m2
