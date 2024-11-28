@@ -18,8 +18,8 @@ Lab3::Lab3()
     light_position = glm::vec3(7, 7, 7);
     light_direction = glm::normalize(glm::vec3(-1, -1, -1));
 
-    light_space_near_plane = 0.1f;
-    light_space_far_plane = 30.0f;
+    light_space_near_plane = .1f;
+    light_space_far_plane = 30.f;
 
     draw_framebuffer_textures = true;
 

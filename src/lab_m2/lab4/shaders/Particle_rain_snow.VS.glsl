@@ -60,6 +60,7 @@ void main()
     //
     // For animations that are independent of the platform,
     // the speed must be multiplied with deltaTime.
+    pos += spd * deltaTime;
 
     spd = spd - vec3(0, 0.9, 0) * deltaTime;
 

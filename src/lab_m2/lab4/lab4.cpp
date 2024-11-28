@@ -82,7 +82,9 @@ void Lab4::Init()
         // TODO(student): Load images "rain.png", "snowflake.png" and "fire.png" as
         // textures, similar to "particle2.png", loaded above. The images can be
         // found in the same directory as "particle2.png"
-
+        TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "rain.png");
+        TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "snowflake.png");
+        TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "fire2.png");
     }
 
     LoadShader("Fireworks", "Particle_fireworks", "Particle_simple", "Particle", true);
@@ -227,7 +229,9 @@ void Lab4::Update(float deltaTimeSeconds)
 
             // TODO(student): Send uniforms generator_position,
             // deltaTime and offset to the shader
-
+            glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
+            glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
+            glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
         }
     }
 
@@ -239,12 +243,14 @@ void Lab4::Update(float deltaTimeSeconds)
             shader->Use();
 
             // TODO(student): Send correct texture for snow
-            TextureManager::GetTexture("particle2.png")->BindToTextureUnit(GL_TEXTURE0);
+            TextureManager::GetTexture("rain.png")->BindToTextureUnit(GL_TEXTURE0);
             particleEffect->Render(GetSceneCamera(), shader);
 
             // TODO(student): Send uniforms generator_position,
             // deltaTime and offset to the shader
-
+            glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
+            glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
+            glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
         }
     }
 
@@ -256,12 +262,14 @@ void Lab4::Update(float deltaTimeSeconds)
             shader->Use();
 
             // TODO(student): Send correct texture for rain
-            TextureManager::GetTexture("particle2.png")->BindToTextureUnit(GL_TEXTURE0);
+            TextureManager::GetTexture("snowflake.png")->BindToTextureUnit(GL_TEXTURE0);
             particleEffect->Render(GetSceneCamera(), shader);
 
             // TODO(student): Send uniforms generator_position,
             // deltaTime and offset to the shader
-
+            glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
+            glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
+            glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
         }
     }
 
@@ -272,18 +280,21 @@ void Lab4::Update(float deltaTimeSeconds)
         {
             shader->Use();
             // TODO(student): Send correct texture for fire
-            TextureManager::GetTexture("particle2.png")->BindToTextureUnit(GL_TEXTURE0);
+            TextureManager::GetTexture("fire2.png")->BindToTextureUnit(GL_TEXTURE0);
             particleEffect->Render(GetSceneCamera(), shader);
 
             // TODO(student): Send uniforms generator_position,
             // deltaTime and offset to the shader
-
+            glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
+            glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
+            glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
         }
     }
 
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 
+    /*
     {
         glm::mat4 model = glm::translate(glm::mat4(1), generator_position);
         if (scene == 1 || scene == 2)
@@ -292,6 +303,7 @@ void Lab4::Update(float deltaTimeSeconds)
             model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
         RenderMesh(meshes["box"], shaders["Simple"], model);
     }
+    */
 }
 
 

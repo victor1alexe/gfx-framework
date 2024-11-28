@@ -73,7 +73,7 @@ void main()
 
     case 6:
         // TODO(student): Multiply the light accumulation sample and the color sample to compute final pixel color.
-        out_color = vec4(color(), 1);
+        out_color = vec4(color(), 1) * vec4(light_accumulation(), 1.0f);
         break;
 
     default:
