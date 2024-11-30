@@ -55,5 +55,8 @@ namespace m2
          int terrain_resolution_z = 512;
          GLenum wireframe = GL_FILL;
          Texture2D *heightmap_texture;
+
+         // Bezier curve for the waterfall path
+         glm::vec3 control_p0, control_p1, control_p2, control_p3;
     };
 }   // namespace m2

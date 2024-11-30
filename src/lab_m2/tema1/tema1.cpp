@@ -75,6 +75,15 @@ Texture2D* Tema1::CreateRandomTexture(unsigned int width, unsigned int height)
     return texture;
 }
 
+glm::vec3 bezier(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3)
+{
+    return glm::vec3(
+        (1 - t) * (1 - t) * (1 - t) * p0.x + 3 * t * (1 - t) * (1 - t) * p1.x + 3 * t * t * (1 - t) * p2.x + t * t * t * p3.x,
+        (1 - t) * (1 - t) * (1 - t) * p0.y + 3 * t * (1 - t) * (1 - t) * p1.y + 3 * t * t * (1 - t) * p2.y + t * t * t * p3.y,
+        (1 - t) * (1 - t) * (1 - t) * p0.z + 3 * t * (1 - t) * (1 - t) * p1.z + 3 * t * t * (1 - t) * p2.z + t * t * t * p3.z
+    );
+}
+
 void Tema1::Init()
 {
     outputType = 0;
@@ -113,6 +122,17 @@ void Tema1::Init()
         mesh->UseMaterials(false);
         meshes[mesh->GetMeshID()] = mesh;
     }
+
+    // Bezier curve for the waterfall path
+    control_p0 = glm::vec3(-10.0, 1.5, 0.0);
+    control_p1 = glm::vec3(-9.0, 1.4, 0.0);
+    control_p2 = glm::vec3(-8.0, 0.1, 0.0);
+    control_p3 = glm::vec3(-7.0, 0.0, 0.0);
+
+    // print some points of the bezier curve for debugging
+    // for (float t = 0; t <= 1; t += 0.1f) {
+    //     std::cout << bezier(t, control_p0, control_p1, control_p2, control_p3) << "\n";
+    // }
 
     // Create a single vertex mesh to be used with drawElementsInstanced
     no_of_instances = terrain_resolution_x * terrain_resolution_z;
@@ -236,6 +256,16 @@ void Tema1::Update(float deltaTimeSeconds)
 
         auto shader = shaders["TerrainShader"];
         TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
+
+        // Send the bezier curve control points to the shader
+        // shader->Use();
+        // print control points
+        // std::cout << glm::vec2(control_p0) << glm::vec2(control_p1) << glm::vec2(control_p2) << glm::vec2(control_p3) << "\n";
+
+        glUniform3fv(glGetUniformLocation(shader->program, "control_p0"), 1, glm::value_ptr(control_p0));
+        glUniform3fv(glGetUniformLocation(shader->program, "control_p1"), 1, glm::value_ptr(control_p1));
+        glUniform3fv(glGetUniformLocation(shader->program, "control_p2"), 1, glm::value_ptr(control_p2));
+        glUniform3fv(glGetUniformLocation(shader->program, "control_p3"), 1, glm::value_ptr(control_p3));
 
         // heightmap_texture->BindToTextureUnit(GL_TEXTURE0);
         RenderMeshInstanced(meshes["point"], shader, glm::mat4(1), no_of_instances);
