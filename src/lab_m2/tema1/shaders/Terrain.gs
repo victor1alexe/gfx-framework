@@ -10,11 +10,6 @@ uniform sampler2D heightmap;
 
 in int instance[1];
 
-float rand(int seed)
-{
-    return fract(sin(float(seed) * 12.9898) * 43758.5453);
-}
-
 void main()
 {
     vec2 terrain_size = vec2(20, 20);
@@ -23,10 +18,12 @@ void main()
     vec2 pos_step = terrain_size / resolution;
     vec2 tex_step = 1.0f / resolution;
 
-    vec2 pos_local = vec2(instance[0] % int(resolution.x), instance[0] / int(resolution.y)) * pos_step;
-    vec2 texture_coords = pos_local / terrain_size;
+    vec2 start_pos = vec2(-terrain_size.x / 2, -terrain_size.y / 2);
+    vec2 final_pos = start_pos + vec2(instance[0] % int(resolution.x), instance[0] / int(resolution.y)) * pos_step;
 
-    float factor = 5.0f;
+    vec2 texture_coords = final_pos / terrain_size;
+
+    float factor = 15.0f;
 
     float height_1 = factor * texture(heightmap, texture_coords + tex_step * vec2(0, 0)).r;
     float height_2 = factor * texture(heightmap, texture_coords + tex_step * vec2(0, 1)).r;
@@ -34,19 +31,19 @@ void main()
     float height_4 = factor * texture(heightmap, texture_coords + tex_step * vec2(1, 1)).r;
 
     vec4 position = gl_in[0].gl_Position;
-    gl_Position = Projection * View * vec4(pos_local.x, height_1, pos_local.y, 1);
+    gl_Position = Projection * View * vec4(final_pos.x, height_1, final_pos.y, 1);
     EmitVertex();
 
     position = gl_in[0].gl_Position;
-    gl_Position = Projection * View * vec4(pos_local.x, height_2, pos_local.y + pos_step.y, 1);
+    gl_Position = Projection * View * vec4(final_pos.x, height_2, final_pos.y + pos_step.y, 1);
     EmitVertex();
 
     position = gl_in[0].gl_Position;
-    gl_Position = Projection * View * vec4(pos_local.x + pos_step.x, height_3, pos_local.y, 1);
+    gl_Position = Projection * View * vec4(final_pos.x + pos_step.x, height_3, final_pos.y, 1);
     EmitVertex();
 
     position = gl_in[0].gl_Position;
-    gl_Position = Projection * View * vec4(pos_local.x + pos_step.x, height_4, pos_local.y + pos_step.y, 1);
+    gl_Position = Projection * View * vec4(final_pos.x + pos_step.x, height_4, final_pos.y + pos_step.y, 1);
     EmitVertex();
 
     EndPrimitive();

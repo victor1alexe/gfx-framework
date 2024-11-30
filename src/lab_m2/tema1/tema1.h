@@ -26,21 +26,22 @@ namespace m2
         void Init() override;
 
      private:
-        void FrameStart() override;
-        void Update(float deltaTimeSeconds) override;
-        void FrameEnd() override;
+         void FrameStart() override;
+         void Update(float deltaTimeSeconds) override;
+         void FrameEnd() override;
 
-        void OnInputUpdate(float deltaTime, int mods) override;
-        void OnKeyPress(int key, int mods) override;
-        void OnKeyRelease(int key, int mods) override;
-        void OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY) override;
-        void OnMouseBtnPress(int mouseX, int mouseY, int button, int mods) override;
-        void OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods) override;
-        void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
-        void OnWindowResize(int width, int height) override;
+         void OnInputUpdate(float deltaTime, int mods) override;
+         void OnKeyPress(int key, int mods) override;
+         void OnKeyRelease(int key, int mods) override;
+         void OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY) override;
+         void OnMouseBtnPress(int mouseX, int mouseY, int button, int mods) override;
+         void OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods) override;
+         void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
+         void OnWindowResize(int width, int height) override;
 
-        void LoadShader(const std::string &fileName);
+         void LoadShader(const std::string &fileName);
          void RenderMeshInstanced(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, int instances, const glm::vec3 &color = glm::vec3(1));
+         Texture2D* CreateRandomTexture(unsigned int width, unsigned int height);
 
      private:
          FrameBuffer *frameBuffer;
@@ -48,8 +49,11 @@ namespace m2
          std::vector<LightInfoTema1> lights;
          int outputType;
          int no_of_instances;
-         int terrain_x = 512;
-         int terrain_z = 512;
+         int terrain_size_x = 20;
+         int terrain_size_z = 20;
+         int terrain_resolution_x = 512;
+         int terrain_resolution_z = 512;
          GLenum wireframe = GL_FILL;
+         Texture2D *heightmap_texture;
     };
 }   // namespace m2

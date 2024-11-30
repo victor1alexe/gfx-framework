@@ -21,6 +21,7 @@ inline float Rand01()
 
 Tema1::Tema1()
 {
+    // Texture2D *heightmap_texture = CreateRandomTexture(1024, 1024);
 }
 
 
@@ -28,6 +29,51 @@ Tema1::~Tema1()
 {
 }
 
+Texture2D* Tema1::CreateRandomTexture(unsigned int width, unsigned int height)
+{
+    GLuint textureID = 0;
+    unsigned int channels = 3;
+    unsigned int size = width * height * channels;
+    unsigned char* data = new unsigned char[size];
+
+    // TODO(student): Generate random texture data
+    for (unsigned int i = 0; i < size; i += 3) {
+        data[i] = 255 * Rand01();
+        data[i + 1] = 255 * Rand01();
+        data[i + 2] = 255 * Rand01();
+    }
+
+    // TODO(student): Generate and bind the new texture ID
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    if (GLEW_EXT_texture_filter_anisotropic) {
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4);
+    }
+    // TODO(student): Set the texture parameters (MIN_FILTER, MAG_FILTER and WRAPPING MODE) using glTexParameteri
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    CheckOpenGLError();
+
+    // Use glTexImage2D to set the texture data
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    // TODO(student): Generate texture mip-maps
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    CheckOpenGLError();
+
+    // Save the texture into a wrapper Texture2D class for using easier later during rendering phase
+    Texture2D* texture = new Texture2D();
+    texture->Init(textureID, width, height, channels);
+
+    SAFE_FREE_ARRAY(data);
+    return texture;
+}
 
 void Tema1::Init()
 {
@@ -69,11 +115,11 @@ void Tema1::Init()
     }
 
     // Create a single vertex mesh to be used with drawElementsInstanced
-    no_of_instances = terrain_x * terrain_z;
+    no_of_instances = terrain_resolution_x * terrain_resolution_z;
     {
         vector<VertexFormat> vertices
         {
-            VertexFormat(glm::vec3(0, 1, 0)),
+            VertexFormat(glm::vec3(-terrain_size_x / 2, 0, -terrain_size_z / 2), glm::vec3(0, 1, 0)),
         };
 
         vector<unsigned int> indices =
@@ -97,7 +143,7 @@ void Tema1::Init()
     }
 
     // Load terrain heightmap
-    TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "terrain_textures"), "heightmap2.png", "heightmap");
+    TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "terrain_textures"), "heightmap3.png", "heightmap");
 
     LoadShader("Render2Texture");
     LoadShader("Composition");
@@ -190,6 +236,8 @@ void Tema1::Update(float deltaTimeSeconds)
 
         auto shader = shaders["TerrainShader"];
         TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
+
+        // heightmap_texture->BindToTextureUnit(GL_TEXTURE0);
         RenderMeshInstanced(meshes["point"], shader, glm::mat4(1), no_of_instances);
     }
 
