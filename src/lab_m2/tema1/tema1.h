@@ -49,8 +49,8 @@ namespace m2
          std::vector<LightInfoTema1> lights;
          int outputType;
          int no_of_instances;
-         int terrain_size_x = 20;
-         int terrain_size_z = 20;
+         int terrain_size_x = 8;
+         int terrain_size_z = 8;
          int terrain_resolution_x = 512;
          int terrain_resolution_z = 512;
          GLenum wireframe = GL_FILL;
