@@ -43,12 +43,13 @@ namespace m2
          void RenderMeshInstanced(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, int instances, const glm::vec3 &color = glm::vec3(1));
 
      private:
-        FrameBuffer *frameBuffer;
-        FrameBuffer *lightBuffer;
-        std::vector<LightInfoTema1> lights;
-        int outputType;
-        int no_of_instances;
-        int terrain_x = 1024;
-         int terrain_z = 1024;
+         FrameBuffer *frameBuffer;
+         FrameBuffer *lightBuffer;
+         std::vector<LightInfoTema1> lights;
+         int outputType;
+         int no_of_instances;
+         int terrain_x = 512;
+         int terrain_z = 512;
+         GLenum wireframe = GL_FILL;
     };
 }   // namespace m2

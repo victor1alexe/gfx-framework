@@ -90,11 +90,14 @@ void Tema1::Init()
     {
         Shader *shader = new Shader("TerrainShader");
         shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Terrain.vs"), GL_VERTEX_SHADER);
-        // shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Terrain.gs"), GL_FRAGMENT_SHADER);
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Terrain.gs"), GL_GEOMETRY_SHADER);
         shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Terrain.fs"), GL_FRAGMENT_SHADER);
         shader->CreateAndLink();
         shaders[shader->GetName()] = shader;
     }
+
+    // Load terrain heightmap
+    TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "terrain_textures"), "heightmap2.png", "heightmap");
 
     LoadShader("Render2Texture");
     LoadShader("Composition");
@@ -156,9 +159,14 @@ void Tema1::RenderMeshInstanced(Mesh *mesh, Shader *shader, const glm::mat4 &mod
     int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
     glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
+    glPolygonMode(GL_FRONT_AND_BACK, wireframe);
+    glLineWidth(3);
+
     // Draw the object instanced
     glBindVertexArray(mesh->GetBuffers()->m_VAO);
     glDrawElementsInstanced(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, (void*)0, instances);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void Tema1::Update(float deltaTimeSeconds)
@@ -181,13 +189,7 @@ void Tema1::Update(float deltaTimeSeconds)
         frameBuffer->Bind();
 
         auto shader = shaders["TerrainShader"];
-        // send no_of_instances to the shader
-        glUniform1i(glGetUniformLocation(shader->program, "no_of_instances"), no_of_instances);
-        // send terrain_x and terrain_z to the shader
-        glUniform1i(glGetUniformLocation(shader->program, "terrain_x"), terrain_x);
-        glUniform1i(glGetUniformLocation(shader->program, "terrain_z"), terrain_z);
-
-        // Render the terrain
+        TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
         RenderMeshInstanced(meshes["point"], shader, glm::mat4(1), no_of_instances);
     }
 
@@ -375,6 +377,19 @@ void Tema1::OnKeyPress(int key, int mods)
     if (index >= 0 && index <= 9)
     {
         outputType = index;
+    }
+
+    // Toggle wireframe mode
+    if (key == GLFW_KEY_F)
+    {
+        switch (wireframe) {
+        case GL_FILL:
+            wireframe = GL_LINE;
+            break;
+        case GL_LINE:
+            wireframe = GL_FILL;
+            break;
+        }
     }
 }
 
