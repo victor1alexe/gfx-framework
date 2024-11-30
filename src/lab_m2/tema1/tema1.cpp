@@ -266,7 +266,7 @@ void Tema1::Update(float deltaTimeSeconds)
         }
 
         TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE0);
-        RenderMesh(meshes["plane"], shader, glm::vec3(0, 0, 0), glm::vec3(0.5f));
+        // RenderMesh(meshes["plane"], shader, glm::vec3(0, 0, 0), glm::vec3(0.5f));
     }
 
     // ------------------------------------------------------------------------
