@@ -220,7 +220,7 @@ void Lab2::OnKeyPress(int key, int mods)
         //no_of_generated_points %= max_no_of_generated_points;
     }
 
-    if (key == GLFW_KEY_J) {
+    if (key == GLFW_KEY_P) {
         surface_type++;
 		surface_type %= 2;
     }
