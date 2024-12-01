@@ -12,6 +12,11 @@ uniform sampler2D heightmap;
 // Instance id
 in int instance[1];
 
+// output normal as color for fragment shader
+// layout(location = 0) out vec2 uv;
+layout(location = 1) out vec3 pos_out;
+layout(location = 2) out vec3 normal_out;
+
 struct vertex_info {
     vec3 position;
     vec2 tex_coords;
@@ -64,10 +69,10 @@ vertex_info vertices[4]; // vertices of the quad
 
 // Bezier control points for waterfall/
 // Define so that one end is at the center of the terrain and the other end is at the edge of the terrain
-vec3 control_p0 = vec3(-2.5 * d_sinkhole,   0.0,          0.0);
-vec3 control_p1 = vec3(-1.4 * d_sinkhole,   0.0,    0.0);
-vec3 control_p2 = vec3(-1.0 * d_sinkhole,  0.0,   0.0);
-vec3 control_p3 = vec3(world_center.x,      -h_max,            0.0);
+vec3 control_p0 = vec3(-2.5 * d_sinkhole, 0.0, 0.0);
+vec3 control_p1 = vec3(-1.4 * d_sinkhole, 0.0, 0.0);
+vec3 control_p2 = vec3(-1.0 * d_sinkhole, 0.0, 0.0);
+vec3 control_p3 = vec3(world_center.x, -h_max, 0.0);
 
 // Calculate the bezier curve of the waterfall at a certain t parameter
 vec3 bezier(float t)
@@ -125,6 +130,25 @@ base_height_info base_height(vec3 point)
     return info;
 }
 
+vec3 normal(vec2 uv)
+{
+    vec3 p = vec3(uv.x, texture(heightmap, uv).r, uv.y);
+    vec3 dp1 = vec3(2.0 * world_step.x, texture(heightmap, uv + vec2(tex_step.x, 0)).r - texture(heightmap, uv - vec2(tex_step.x, 0)).r, 0.0);
+    vec3 dp2 = vec3(0.0, texture(heightmap, uv + vec2(0, tex_step.y)).r - texture(heightmap, uv - vec2(0, tex_step.y)).r, 2.0 * world_step.y);
+
+    return normalize(cross(dp1, dp2));
+}
+
+/* CC edu */
+vec3 ComputeNormal(vec2 uv) {
+    float hL = texture(heightmap, uv + vec2(-1.0, 0.0) / 2048.0).r;
+    float hR = texture(heightmap, uv + vec2(1.0, 0.0) / 2048.0).r;
+    float hU = texture(heightmap, uv + vec2(0.0, -1.0) / 2048.0).r;
+    float hD = texture(heightmap, uv + vec2(0.0, 1.0) / 2048.0).r;
+
+    return normalize(vec3(hL - hR, 0.1, hD - hU));
+}
+
 void main()
 {
     vec3 world_pos_first_vertex = world_start_pos + vec3(world_step.x * first_vertex_col, 0, world_step.y * first_vertex_row);   // world position of the first vertex of the quad
@@ -157,10 +181,11 @@ void main()
                     // We want the noise texture to matter less as we are closer to the center of the terrain
                     // The range of tex_factor is [0, 1]
                     // We want a linear decrease of tex_factor as we move away from the center of the terrain
-                    // float tex_factor = 1.0f - (terrain_size.x - base_info.distance_to_center * terrain_size.x) / terrain_size.x;
                     float tex_factor = (base_info.distance_to_center < d_sinkhole) ? 0.0f : (base_info.distance_to_center - d_sinkhole) / base_info.distance_to_center;
                     tex_factor *= global_tex_factor;
-                    vertices[i].position.y += tex_factor * texture(heightmap, vec2(vertices[i].position.x, vertices[i].position.z)).r;
+                    // normalize position to [0, 1] for texture sampling
+                    vertices[i].tex_coords = vec2((vertices[i].position.x - world_start_pos.x) / terrain_size.x, (vertices[i].position.z - world_start_pos.z) / terrain_size.y);
+                    vertices[i].position.y += tex_factor * texture(heightmap, vertices[i].tex_coords).r;
                 }
                 break;
         }
@@ -172,7 +197,10 @@ void main()
 
     // Emit the vertices of the quad
     for (int i = 0; i < 4; i++) {
-        gl_Position = Projection * View * vec4(vertices[i].position, 1.0f);
+        pos_out = vertices[i].position;
+        normal_out = ComputeNormal(vec2(vertices[i].position.x, vertices[i].position.z));
+        // uv = vertices[i].tex_coords;
+         gl_Position = Projection * View * vec4(vertices[i].position, 1.0f);
         EmitVertex();
     }
 

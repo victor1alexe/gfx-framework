@@ -6,24 +6,16 @@
 using namespace std;
 using namespace m2;
 
-
-//Generates a random value between 0 and 1.
+// Generates a random value between 0 and 1.
 inline float Rand01()
 {
     return rand() / static_cast<float>(RAND_MAX);
 }
 
-/*
- *  To find out more about `FrameStart`, `Update`, `FrameEnd`
- *  and the order in which they are called, see `world.cpp`.
- */
-
-
 Tema1::Tema1()
 {
-    // Texture2D *heightmap_texture = CreateRandomTexture(1024, 1024);
+    no_of_instances = terrain_resolution_x * terrain_resolution_z;
 }
-
 
 Tema1::~Tema1()
 {
@@ -75,15 +67,6 @@ Texture2D* Tema1::CreateRandomTexture(unsigned int width, unsigned int height)
     return texture;
 }
 
-glm::vec3 bezier(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3)
-{
-    return glm::vec3(
-        (1 - t) * (1 - t) * (1 - t) * p0.x + 3 * t * (1 - t) * (1 - t) * p1.x + 3 * t * t * (1 - t) * p2.x + t * t * t * p3.x,
-        (1 - t) * (1 - t) * (1 - t) * p0.y + 3 * t * (1 - t) * (1 - t) * p1.y + 3 * t * t * (1 - t) * p2.y + t * t * t * p3.y,
-        (1 - t) * (1 - t) * (1 - t) * p0.z + 3 * t * (1 - t) * (1 - t) * p1.z + 3 * t * t * (1 - t) * p2.z + t * t * t * p3.z
-    );
-}
-
 void Tema1::Init()
 {
     outputType = 0;
@@ -93,8 +76,8 @@ void Tema1::Init()
     camera->Update();
 
     TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "ground.jpg");
+    TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "terrain_textures"), "heightmap3.png", "heightmap");
 
-    // Load a mesh from file into GPU memory
     {
         Mesh* mesh = new Mesh("box");
         mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
@@ -108,7 +91,6 @@ void Tema1::Init()
         meshes[mesh->GetMeshID()] = mesh;
     }
 
-    // Load a mesh from file into GPU memory
     {
         Mesh* mesh = new Mesh("sphere");
         mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "sphere.obj");
@@ -123,19 +105,7 @@ void Tema1::Init()
         meshes[mesh->GetMeshID()] = mesh;
     }
 
-    // Bezier curve for the waterfall path
-    control_p0 = glm::vec3(-10.0, 1.5, 0.0);
-    control_p1 = glm::vec3(-9.0, 1.4, 0.0);
-    control_p2 = glm::vec3(-8.0, 0.1, 0.0);
-    control_p3 = glm::vec3(-7.0, 0.0, 0.0);
-
-    // print some points of the bezier curve for debugging
-    // for (float t = 0; t <= 1; t += 0.1f) {
-    //     std::cout << bezier(t, control_p0, control_p1, control_p2, control_p3) << "\n";
-    // }
-
     // Create a single vertex mesh to be used with drawElementsInstanced
-    no_of_instances = terrain_resolution_x * terrain_resolution_z;
     {
         vector<VertexFormat> vertices
         {
@@ -162,9 +132,6 @@ void Tema1::Init()
         shaders[shader->GetName()] = shader;
     }
 
-    // Load terrain heightmap
-    TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "terrain_textures"), "heightmap3.png", "heightmap");
-
     LoadShader("Render2Texture");
     LoadShader("Composition");
     LoadShader("LightPass");
@@ -182,13 +149,6 @@ void Tema1::Init()
     for (int i = 0; i < 40; ++i)
     {
         LightInfoTema1 lightInfo;
-
-        // TODO(student): Set lightInfo with random position, random color
-        // and a random radius for each light source.
-        // You can use the Rand01 function defined above.
-        // The chosen position is between (-10, 0, -10) and (10, 3, 10)
-        // The chosen color is between (0, 0, 0) and (1, 1, 1).
-        // The chosen radius is between 3 and 4.
 
         lightInfo.position = glm::vec3(20 * Rand01() - 10, 3 * Rand01(), 20 * Rand01() - 10);
         lightInfo.color = glm::vec3(Rand01(), Rand01(), Rand01());
@@ -253,22 +213,9 @@ void Tema1::Update(float deltaTimeSeconds)
     // Terrain render
     {
         frameBuffer->Bind();
-
-        auto shader = shaders["TerrainShader"];
-        TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
-
-        // Send the bezier curve control points to the shader
-        // shader->Use();
-        // print control points
-        // std::cout << glm::vec2(control_p0) << glm::vec2(control_p1) << glm::vec2(control_p2) << glm::vec2(control_p3) << "\n";
-
-        glUniform3fv(glGetUniformLocation(shader->program, "control_p0"), 1, glm::value_ptr(control_p0));
-        glUniform3fv(glGetUniformLocation(shader->program, "control_p1"), 1, glm::value_ptr(control_p1));
-        glUniform3fv(glGetUniformLocation(shader->program, "control_p2"), 1, glm::value_ptr(control_p2));
-        glUniform3fv(glGetUniformLocation(shader->program, "control_p3"), 1, glm::value_ptr(control_p3));
-
-        // heightmap_texture->BindToTextureUnit(GL_TEXTURE0);
-        RenderMeshInstanced(meshes["point"], shader, glm::mat4(1), no_of_instances);
+        // auto shader = shaders["TerrainShader"];
+        // TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
+        // RenderMeshInstanced(meshes["point"], shader, glm::mat4(1), no_of_instances);
     }
 
     // ------------------------------------------------------------------------
@@ -277,14 +224,7 @@ void Tema1::Update(float deltaTimeSeconds)
         // frameBuffer->Bind();
 
         auto shader = shaders["Render2Texture"];
-
         TextureManager::GetTexture("default.png")->BindToTextureUnit(GL_TEXTURE0);
-
-        // Render scene objects
-        // RenderMesh(meshes["box"], shader, glm::vec3(1.5, 0.5f, 0), glm::vec3(0.5f));
-        // RenderMesh(meshes["box"], shader, glm::vec3(0, 1.05f, 0), glm::vec3(2));
-        // RenderMesh(meshes["box"], shader, glm::vec3(-2, 1.5f, 0));
-        // RenderMesh(meshes["sphere"], shader, glm::vec3(-4, 1, 1));
 
         // Render a simple point light bulb for each light (for debugging purposes)
         TextureManager::GetTexture("default.png")->BindToTextureUnit(GL_TEXTURE0);
@@ -296,7 +236,11 @@ void Tema1::Update(float deltaTimeSeconds)
         }
 
         TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE0);
-        // RenderMesh(meshes["plane"], shader, glm::vec3(0, 0, 0), glm::vec3(0.5f));
+        RenderMesh(meshes["plane"], shader, glm::vec3(0, 0, 0), glm::vec3(0.5f));
+
+        shader = shaders["TerrainShader"];
+        TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
+        RenderMeshInstanced(meshes["point"], shader, glm::mat4(1), no_of_instances);
     }
 
     // ------------------------------------------------------------------------
