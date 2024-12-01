@@ -14,11 +14,27 @@ inline float Rand01()
 
 Tema1::Tema1()
 {
+    outputType = 0;
     no_of_instances = terrain_resolution_x * terrain_resolution_z;
 }
 
 Tema1::~Tema1()
 {
+}
+
+void Tema1::LoadShader(const std::string &name)
+{
+    std::string shaderPath = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "lab5", "shaders");
+
+    // Create a shader program for particle system
+    {
+        Shader *shader = new Shader(name);
+        shader->AddShader(PATH_JOIN(shaderPath, name + ".VS.glsl"), GL_VERTEX_SHADER);
+        shader->AddShader(PATH_JOIN(shaderPath, name + ".FS.glsl"), GL_FRAGMENT_SHADER);
+
+        shader->CreateAndLink();
+        shaders[shader->GetName()] = shader;
+    }
 }
 
 Texture2D* Tema1::CreateRandomTexture(unsigned int width, unsigned int height)
@@ -30,9 +46,9 @@ Texture2D* Tema1::CreateRandomTexture(unsigned int width, unsigned int height)
 
     // TODO(student): Generate random texture data
     for (unsigned int i = 0; i < size; i += 3) {
-        data[i] = 255 * Rand01();
-        data[i + 1] = 255 * Rand01();
-        data[i + 2] = 255 * Rand01();
+        data[i] = 255 * static_cast<unsigned char>(Rand01());
+        data[i + 1] = 255 * static_cast<unsigned char>(Rand01());
+        data[i + 2] = 255 * static_cast<unsigned char>(Rand01());
     }
 
     // TODO(student): Generate and bind the new texture ID
@@ -69,8 +85,6 @@ Texture2D* Tema1::CreateRandomTexture(unsigned int width, unsigned int height)
 
 void Tema1::Init()
 {
-    outputType = 0;
-
     auto camera = GetSceneCamera();
     camera->SetPositionAndRotation(glm::vec3(0, 2, 3.5), glm::quat(glm::vec3(-20 * TO_RADIANS, 0, 0)));
     camera->Update();
@@ -146,18 +160,17 @@ void Tema1::Init()
     lightBuffer->Generate(resolution.x, resolution.y, 1, false);
     //lightBuffer contains 1 texture (light accumulation)
 
-    for (int i = 0; i < 40; ++i)
+    for (int i = 0; i < 5; ++i)
     {
         LightInfoTema1 lightInfo;
 
-        lightInfo.position = glm::vec3(20 * Rand01() - 10, 3 * Rand01(), 20 * Rand01() - 10);
+        lightInfo.position = glm::vec3(4 * Rand01() - 2, 0.5, 4 * Rand01() - 2);
         lightInfo.color = glm::vec3(Rand01(), Rand01(), Rand01());
-        lightInfo.radius = 3 + Rand01();
+        lightInfo.radius = 3;
 
         lights.push_back(lightInfo);
     }
 }
-
 
 void Tema1::FrameStart()
 {
@@ -199,44 +212,27 @@ void Tema1::Update(float deltaTimeSeconds)
 {
     ClearScreen();
 
-    for (auto& l : lights)
-    {
-        // TODO(student): Move the light sources in an orbit around the center of the scene.
-        // The orbit is in the xoz plane. Compute rotationRadians for the current frame 
-        // such that the light sources rotate 6 degrees/second. Use deltaTimeSeconds.
-        float rotationRadians = 0.0f;
-
+    for (auto& l : lights) {
         glm::mat4 rotateMatrix = glm::rotate(glm::mat4(1.0f), deltaTimeSeconds, glm::vec3(0, 1, 0));
         l.position = rotateMatrix * glm::vec4(l.position, 1.0f);
-    }
-
-    // Terrain render
-    {
-        frameBuffer->Bind();
-        // auto shader = shaders["TerrainShader"];
-        // TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
-        // RenderMeshInstanced(meshes["point"], shader, glm::mat4(1), no_of_instances);
     }
 
     // ------------------------------------------------------------------------
     // Deferred rendering pass
     {
-        // frameBuffer->Bind();
+        frameBuffer->Bind();
 
         auto shader = shaders["Render2Texture"];
-        TextureManager::GetTexture("default.png")->BindToTextureUnit(GL_TEXTURE0);
 
-        // Render a simple point light bulb for each light (for debugging purposes)
         TextureManager::GetTexture("default.png")->BindToTextureUnit(GL_TEXTURE0);
-        for (auto &l : lights)
-        {
+        for (auto &l : lights) {
             auto model = glm::translate(glm::mat4(1), l.position);
             model = glm::scale(model, glm::vec3(0.2f));
-            // RenderMesh(meshes["sphere"], shader, model);
+            RenderMesh(meshes["sphere"], shader, model);
         }
 
-        TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE0);
-        RenderMesh(meshes["plane"], shader, glm::vec3(0, 0, 0), glm::vec3(0.5f));
+        // TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE0);
+        // RenderMesh(meshes["plane"], shader, glm::vec3(0, 0, 0), glm::vec3(0.5f));
 
         shader = shaders["TerrainShader"];
         TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
@@ -288,16 +284,10 @@ void Tema1::Update(float deltaTimeSeconds)
 
         for (auto& lightInfo : lights)
         {
-            // TODO(student): Set the shader uniforms 'light_position', 'light_color' and 'light_radius'
-            // with the values from the light source. Use shader 'shader'.
             glUniform3fv(glGetUniformLocation(shader->program, "light_position"), 1, glm::value_ptr(lightInfo.position));
             glUniform3fv(glGetUniformLocation(shader->program, "light_color"), 1, glm::value_ptr(lightInfo.color));
             glUniform1f(glGetUniformLocation(shader->program, "light_radius"), lightInfo.radius);
 
-
-            // TODO(student): Draw the mesh "sphere" at the position of the light source
-            // and scaled 2 times the light source radius.
-            // Use RenderMesh(mesh, shader, position, scale). Use shader 'shader'.
             RenderMesh(meshes["sphere"], shader, lightInfo.position, 2 * lightInfo.radius * glm::vec3(1.f, 1.f, 1.f));
         }
 
@@ -353,33 +343,10 @@ void Tema1::Update(float deltaTimeSeconds)
     }
 }
 
-
 void Tema1::FrameEnd()
 {
     DrawCoordinateSystem();
 }
-
-
-void Tema1::LoadShader(const std::string &name)
-{
-    std::string shaderPath = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "lab5", "shaders");
-
-    // Create a shader program for particle system
-    {
-        Shader *shader = new Shader(name);
-        shader->AddShader(PATH_JOIN(shaderPath, name + ".VS.glsl"), GL_VERTEX_SHADER);
-        shader->AddShader(PATH_JOIN(shaderPath, name + ".FS.glsl"), GL_FRAGMENT_SHADER);
-
-        shader->CreateAndLink();
-        shaders[shader->GetName()] = shader;
-    }
-}
-
-
-/*
- *  These are callback functions. To find more about callbacks and
- *  how they behave, see `input_controller.h`.
- */
 
 
 void Tema1::OnInputUpdate(float deltaTime, int mods)
@@ -387,23 +354,15 @@ void Tema1::OnInputUpdate(float deltaTime, int mods)
     // Treat continuous update based on input
 }
 
-
 void Tema1::OnKeyPress(int key, int mods)
 {
-    // Add key press event
-
-    // These are the key mappings for compositing different passes.
-    // What does each key seem to activate? Where can you find the
-    // answer? Examine the source code to find out!
     int index = key - GLFW_KEY_0;
-    if (index >= 0 && index <= 9)
-    {
+    if (index >= 0 && index <= 9) {
         outputType = index;
     }
 
     // Toggle wireframe mode
-    if (key == GLFW_KEY_F)
-    {
+    if (key == GLFW_KEY_F) {
         switch (wireframe) {
         case GL_FILL:
             wireframe = GL_LINE;

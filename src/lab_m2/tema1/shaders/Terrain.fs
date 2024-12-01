@@ -5,11 +5,11 @@
 layout(location = 1) in vec3 world_position;
 layout(location = 2) in vec3 world_normal;
 
+
 // Output
 layout(location = 0) out vec4 out_world_position;
 layout(location = 1) out vec4 out_world_normal;
 layout(location = 2) out vec4 out_color;
-
 
 void main()
 {

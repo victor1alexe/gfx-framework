@@ -9,17 +9,19 @@ uniform mat4 Projection;
 // Heightmap texture
 uniform sampler2D heightmap;
 
-// Instance id
-in int instance[1];
+// layout(location = 0) in vec2 tex_coords[1];
+// layout(location = 1) in vec3 pos_in[1];
+// layout(location = 2) in vec3 normal_in[1];
+layout(location = 0) in int instance[1];
 
-// output normal as color for fragment shader
-// layout(location = 0) out vec2 uv;
+layout(location = 0) out vec2 tex_coords_out;
 layout(location = 1) out vec3 pos_out;
 layout(location = 2) out vec3 normal_out;
 
 struct vertex_info {
     vec3 position;
     vec2 tex_coords;
+    vec3 normal;
 };
 
 // Define offset activation for each vertex of the quad
@@ -158,6 +160,8 @@ void main()
         // Calculate x and z position of the vertex
         vec3 offset = vec3(world_step.x * offset_activation[i].x, 0, world_step.y * offset_activation[i].y);
         vertices[i].position = world_pos_first_vertex + offset;
+        vertices[i].tex_coords = vec2((vertices[i].position.x - world_start_pos.x) / terrain_size.x, (vertices[i].position.z - world_start_pos.z) / terrain_size.y);
+        vertices[i].normal = normal(vec2(vertices[i].tex_coords.x, vertices[i].tex_coords.y));
 
         // Calculate height (y coordinate) of the vertex
         /*
@@ -184,7 +188,6 @@ void main()
                     float tex_factor = (base_info.distance_to_center < d_sinkhole) ? 0.0f : (base_info.distance_to_center - d_sinkhole) / base_info.distance_to_center;
                     tex_factor *= global_tex_factor;
                     // normalize position to [0, 1] for texture sampling
-                    vertices[i].tex_coords = vec2((vertices[i].position.x - world_start_pos.x) / terrain_size.x, (vertices[i].position.z - world_start_pos.z) / terrain_size.y);
                     vertices[i].position.y += tex_factor * texture(heightmap, vertices[i].tex_coords).r;
                 }
                 break;
@@ -198,9 +201,9 @@ void main()
     // Emit the vertices of the quad
     for (int i = 0; i < 4; i++) {
         pos_out = vertices[i].position;
-        normal_out = ComputeNormal(vec2(vertices[i].position.x, vertices[i].position.z));
-        // uv = vertices[i].tex_coords;
-         gl_Position = Projection * View * vec4(vertices[i].position, 1.0f);
+        normal_out = vertices[i].normal;
+        tex_coords_out = vertices[i].tex_coords;
+        gl_Position = Projection * View * vec4(vertices[i].position, 1.0f);
         EmitVertex();
     }
 
