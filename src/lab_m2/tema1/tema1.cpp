@@ -3,6 +3,8 @@
 #include <vector>
 #include <iostream>
 
+#include "stb/stb_image.h" // Use stb_image to load textures
+
 using namespace std;
 using namespace m2;
 
@@ -35,6 +37,150 @@ void Tema1::LoadShader(const std::string &name)
         shader->CreateAndLink();
         shaders[shader->GetName()] = shader;
     }
+}
+
+unsigned int Tema1::UploadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z)
+{
+    int width, height, chn;
+
+    unsigned char* data_pos_x = stbi_load(pos_x.c_str(), &width, &height, &chn, 0);
+    unsigned char* data_pos_y = stbi_load(pos_y.c_str(), &width, &height, &chn, 0);
+    unsigned char* data_pos_z = stbi_load(pos_z.c_str(), &width, &height, &chn, 0);
+    unsigned char* data_neg_x = stbi_load(neg_x.c_str(), &width, &height, &chn, 0);
+    unsigned char* data_neg_y = stbi_load(neg_y.c_str(), &width, &height, &chn, 0);
+    unsigned char* data_neg_z = stbi_load(neg_z.c_str(), &width, &height, &chn, 0);
+
+    unsigned int textureID = 0;
+    // TODO(student): Create the texture
+    glGenTextures(1, &textureID);
+
+    // TODO(student): Bind the texture
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    if (GLEW_EXT_texture_filter_anisotropic) {
+        float maxAnisotropy;
+
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
+    }
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    // TODO(student): Load texture information for each face
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_x);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_x);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_y);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_y);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_z);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_z);
+
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    if (GetOpenGLError() == GL_INVALID_OPERATION)
+    {
+        cout << "\t[NOTE] : For students : DON'T PANIC! This error should go away when completing the tasks." << std::endl;
+    }
+
+    // Free memory
+    SAFE_FREE(data_pos_x);
+    SAFE_FREE(data_pos_y);
+    SAFE_FREE(data_pos_z);
+    SAFE_FREE(data_neg_x);
+    SAFE_FREE(data_neg_y);
+    SAFE_FREE(data_neg_z);
+
+    return textureID;
+}
+
+GLuint Tema1::LoadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z)
+{
+    int width, height, chn;
+
+    unsigned char* data_pos_x = stbi_load(pos_x.c_str(), &width, &height, &chn, 0);
+    unsigned char* data_pos_y = stbi_load(pos_y.c_str(), &width, &height, &chn, 0);
+    unsigned char* data_pos_z = stbi_load(pos_z.c_str(), &width, &height, &chn, 0);
+    unsigned char* data_neg_x = stbi_load(neg_x.c_str(), &width, &height, &chn, 0);
+    unsigned char* data_neg_y = stbi_load(neg_y.c_str(), &width, &height, &chn, 0);
+    unsigned char* data_neg_z = stbi_load(neg_z.c_str(), &width, &height, &chn, 0);
+
+    GLuint textureID = 0;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_x);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_x);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_y);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_y);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_z);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_z);
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    return textureID;
+}
+
+void Tema1::RenderSkybox(GLuint skyboxTextureID)
+{
+    auto shader = shaders["Skybox"];
+    shader->Use();
+
+    int model_location = shader->GetUniformLocation("Model");
+    glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
+
+    int loc_view_matrix = shader->GetUniformLocation("View");
+    glm::mat4 view = glm::mat4(glm::mat3(GetSceneCamera()->GetViewMatrix()));
+    glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(view));
+
+    int loc_projection_matrix = shader->GetUniformLocation("Projection");
+    glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(GetSceneCamera()->GetProjectionMatrix()));
+
+    int loc_texture = shader->GetUniformLocation("skybox");
+    glUniform1i(loc_texture, 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTextureID);
+
+    glDepthFunc(GL_LEQUAL);
+    meshes["skybox"]->Render();
+    glDepthFunc(GL_LESS);
+}
+
+void Tema1::ManualRenderSkybox(GLuint VAO, GLuint textureID, Shader *shader)
+{
+    glDepthFunc(GL_LEQUAL);
+    
+    shader->Use();
+
+    int loc_model_matrix = shader->GetUniformLocation("Model");
+    glUniformMatrix4fv(loc_model_matrix, 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
+
+    int loc_view_matrix = shader->GetUniformLocation("View");
+    glm::mat4 view = glm::mat4(glm::mat3(GetSceneCamera()->GetViewMatrix()));
+    glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(view));
+
+    int loc_projection_matrix = shader->GetUniformLocation("Projection");
+    glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(GetSceneCamera()->GetProjectionMatrix()));
+
+    glBindVertexArray(VAO);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS);
 }
 
 Texture2D* Tema1::CreateRandomTexture(unsigned int width, unsigned int height)
@@ -119,6 +265,99 @@ void Tema1::Init()
         meshes[mesh->GetMeshID()] = mesh;
     }
 
+    // Create skybox cube
+    {
+        Mesh* mesh = new Mesh("skybox");
+        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
+        meshes[mesh->GetMeshID()] = mesh;
+    }
+
+    // Create manual skybox
+    
+    float skyboxVertices[] = {
+        // positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f
+    };
+
+    GLuint skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    
+
+    // Get skybox texture
+    // skyboxTextureID = LoadCubeMapTexture(
+    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "pos_x.png"),
+    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "pos_y.png"),
+    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "pos_z.png"),
+    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "neg_x.png"),
+    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "neg_y.png"),
+    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "neg_z.png")
+    // );
+
+    std::string texture_path = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night");
+    skyboxTextureID = UploadCubeMapTexture(
+        PATH_JOIN(texture_path, "pos_x.png"),
+        PATH_JOIN(texture_path, "pos_y.png"),
+        PATH_JOIN(texture_path, "pos_z.png"),
+        PATH_JOIN(texture_path, "neg_x.png"),
+        PATH_JOIN(texture_path, "neg_y.png"),
+        PATH_JOIN(texture_path, "neg_z.png")
+    );
+
+    // Load skybox shader
+    {
+        Shader *shader = new Shader("Skybox");
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Skybox.vs"), GL_VERTEX_SHADER);
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Skybox.fs"), GL_FRAGMENT_SHADER);
+        shader->CreateAndLink();
+        shaders[shader->GetName()] = shader;
+    }
+
     // Create a single vertex mesh to be used with drawElementsInstanced
     {
         glm::vec3 pos(-terrain_size_x / 2, 0, -terrain_size_z / 2);
@@ -164,13 +403,13 @@ void Tema1::Init()
     lightBuffer->Generate(resolution.x, resolution.y, 1, false);
     //lightBuffer contains 1 texture (light accumulation)
 
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 10; ++i)
     {
         LightInfoTema1 lightInfo;
 
-        lightInfo.position = glm::vec3(Rand01() * 8 - 4, 2.0, Rand01() * 8 - 4);
+        lightInfo.position = glm::vec3(Rand01() * 6 - 3, 2.5, Rand01() * 6 - 3);
         lightInfo.color = glm::vec3(Rand01(), Rand01(), Rand01());
-        lightInfo.radius = 3;
+        lightInfo.radius = 2;
 
         lights.push_back(lightInfo);
     }
@@ -226,19 +465,19 @@ void Tema1::Update(float deltaTimeSeconds)
     {
         frameBuffer->Bind();
 
-        auto shader = shaders["Render2Texture"];
+        // auto shader = shaders["Render2Texture"];
 
-        TextureManager::GetTexture("default.png")->BindToTextureUnit(GL_TEXTURE0);
-        for (auto &l : lights) {
-            auto model = glm::translate(glm::mat4(1), l.position);
-            model = glm::scale(model, glm::vec3(0.2f));
-            RenderMesh(meshes["sphere"], shader, model);
-        }
+        // TextureManager::GetTexture("default.png")->BindToTextureUnit(GL_TEXTURE0);
+        // for (auto &l : lights) {
+        //     auto model = glm::translate(glm::mat4(1), l.position);
+        //     model = glm::scale(model, glm::vec3(0.2f));
+        //     RenderMesh(meshes["sphere"], shader, model);
+        // }
 
         // TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE0);
         // RenderMesh(meshes["plane"], shader, glm::vec3(0, 0, 0), glm::vec3(0.5f));
 
-        shader = shaders["TerrainShader"];
+        auto shader = shaders["TerrainShader"];
         shader->Use();
         TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
         TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE1);
@@ -314,6 +553,8 @@ void Tema1::Update(float deltaTimeSeconds)
     // Composition pass
     {
         FrameBuffer::BindDefault();
+
+        RenderSkybox(skyboxTextureID);
 
         auto shader = shaders["Composition"];
         shader->Use();
