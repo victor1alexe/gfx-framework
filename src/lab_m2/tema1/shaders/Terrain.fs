@@ -15,5 +15,5 @@ void main()
 {
     out_world_position = vec4(world_position, 1);
     out_world_normal = vec4(normalize(world_normal), 0);
-    out_color = vec4(out_world_normal.xyz, 1);
+    out_color = vec4(world_normal, 1);
 }

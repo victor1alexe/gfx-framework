@@ -121,9 +121,13 @@ void Tema1::Init()
 
     // Create a single vertex mesh to be used with drawElementsInstanced
     {
+        glm::vec3 pos(-terrain_size_x / 2, 0, -terrain_size_z / 2);
+        glm::vec3 normal(0, 1, 0);
+        glm::vec3 color(0, 1, 1);
+
         vector<VertexFormat> vertices
         {
-            VertexFormat(glm::vec3(-terrain_size_x / 2, 0, -terrain_size_z / 2), glm::vec3(0, 1, 0)),
+            VertexFormat(pos, color, normal),
         };
 
         vector<unsigned int> indices =
@@ -164,7 +168,7 @@ void Tema1::Init()
     {
         LightInfoTema1 lightInfo;
 
-        lightInfo.position = glm::vec3(4 * Rand01() - 2, 0.5, 4 * Rand01() - 2);
+        lightInfo.position = glm::vec3(Rand01() * 8 - 4, 2.0, Rand01() * 8 - 4);
         lightInfo.color = glm::vec3(Rand01(), Rand01(), Rand01());
         lightInfo.radius = 3;
 
