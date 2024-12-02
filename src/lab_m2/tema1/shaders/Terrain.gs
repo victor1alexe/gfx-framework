@@ -9,7 +9,7 @@
 #define HILL 2
 
 #define SINKHOLE_RADIUS 1.0f
-#define WATERFALL_RADIUS 0.05f
+#define WATERFALL_RADIUS 0.1f
 #define HEIGHT_MAX 0.3f
 #define GLOBAL_NOISE_FACTOR 5.0f
 
@@ -59,7 +59,7 @@ vec2 uv_step = 1.0f / resolution;
 
 vec3 control_p0 = vec3(-2.0 * SINKHOLE_RADIUS, 0.5, 0.0);
 vec3 control_p1 = vec3(-1.2 * SINKHOLE_RADIUS, 0.05, 0.0);
-vec3 control_p2 = vec3(-1.0 * SINKHOLE_RADIUS, 0.0, 0.0);
+vec3 control_p2 = vec3(-1.0 * SINKHOLE_RADIUS, -0.03, 0.0);
 vec3 control_p3 = vec3(world_center.x, -0.02, 0.0);
 
 vec3 bezier(float t)

@@ -239,7 +239,16 @@ void Tema1::Update(float deltaTimeSeconds)
         // RenderMesh(meshes["plane"], shader, glm::vec3(0, 0, 0), glm::vec3(0.5f));
 
         shader = shaders["TerrainShader"];
+        shader->Use();
         TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
+        TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE1);
+
+        int loc_heightmap = shader->GetUniformLocation("heightmap");
+        glUniform1i(loc_heightmap, 0);
+
+        int loc_texture = shader->GetUniformLocation("texture_terrain");
+        glUniform1i(loc_texture, 1);
+
         RenderMeshInstanced(meshes["point"], shader, glm::mat4(1), no_of_instances);
     }
 
