@@ -49,6 +49,7 @@ namespace m2
 
         void ResetParticlesRainSnow(int xSize, int ySize, int zSize);
         void ResetParticlesFire(float radius);
+        glm::vec3 CalculateBezier(float t);
 
      private:
          FrameBuffer *frameBuffer;
@@ -75,5 +76,14 @@ namespace m2
 
          glm::vec3 generator_position;
          float offset;
+
+         glm::vec3 world_center = glm::vec3(0, 0, 0);
+
+        glm::vec3 control_p0;
+        glm::vec3 control_p1;
+        glm::vec3 control_p2;
+        glm::vec3 control_p3;
+
+        float normalized_time = 0.0f;
     };
 }   // namespace m2

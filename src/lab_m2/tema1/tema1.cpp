@@ -6,6 +6,8 @@
 
 #include "stb/stb_image.h" // Use stb_image to load textures
 
+#define SINKHOLE_RADIUS 1.0f
+
 using namespace std;
 using namespace m2;
 
@@ -166,7 +168,7 @@ void Tema1::RenderSkybox(GLuint skyboxTextureID)
 
 void Tema1::ResetParticlesFire(float radius)
 {
-    unsigned int nrParticles = 5000;
+    unsigned int nrParticles = 100;
 
     particleEffectTema1 = new ParticleEffect<Particle>();
     particleEffectTema1->Generate(nrParticles, true);
@@ -176,23 +178,35 @@ void Tema1::ResetParticlesFire(float radius)
 
     for (unsigned int i = 0; i < nrParticles; i++)
     {
-        glm::vec3 pos(1);
-        pos.x = (rand() % 100 - 50)/ 100.0f ;
-        pos.y = (rand() % 100 - 50)/ 100.0f;
-        pos.z = (rand() % 100 - 50)/ 100.0f;
-        pos = glm::normalize(pos) * radius ;
+        // glm::vec3 pos(1);
+        // pos.x = (rand() % 100 - 50)/ 100.0f ;
+        // pos.y = (rand() % 100 - 50)/ 100.0f;
+        // pos.z = (rand() % 100 - 50)/ 100.0f;
+        // pos = glm::normalize(pos) * radius ;
 
-        glm::vec3 speed(0);
-        speed = glm::normalize(glm::vec3(0, 5, 0) - glm::vec3(pos));
-        speed *= (rand() % 100 / 100.0f);
-        speed += glm::vec3(rand() % 5 / 5.0f, rand() % 5 / 5.0f, rand() % 5 / 5.0f) * 0.2f;
+        // glm::vec3 speed(0);
+        // speed = glm::normalize(glm::vec3(0, 5, 0) - glm::vec3(pos));
+        // speed *= (rand() % 100 / 100.0f);
+        // speed += glm::vec3(rand() % 5 / 5.0f, rand() % 5 / 5.0f, rand() % 5 / 5.0f) * 0.2f;
 
-        float lifetime = 1 + (rand() % 100 / 100.0f);
+        // set the pos and speed to match the bezier curve
+        float t = i / static_cast<float>(nrParticles);
+        glm::vec3 pos = glm::vec3(t, 0, 0);
+        glm::vec3 speed = glm::vec3(0, 0, 0);
+        float lifetime = 1;
 
         data[i].SetInitial(glm::vec4 (pos, 1), glm::vec4 (speed, 0), 0, lifetime);
     }
 
     particleSSBO->SetBufferData(data);
+}
+
+glm::vec3 Tema1::CalculateBezier(float t)
+{
+    return  control_p0 * static_cast<float>(pow((1 - t), 3)) +
+            control_p1 * static_cast<float>(3 * t * pow((1 - t), 2)) +
+            control_p2 * static_cast<float>(3 * pow(t, 2) * (1 - t)) +
+            control_p3 * static_cast<float>(pow(t, 3));
 }
 
 void Tema1::ResetParticlesRainSnow(int xSize, int ySize, int zSize)
@@ -285,6 +299,11 @@ void Tema1::Init()
     TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "ground.jpg");
     TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "terrain_textures"), "heightmap3.png", "heightmap");
     TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "rain.png");
+
+    control_p0 = glm::vec3(-2.0 * SINKHOLE_RADIUS, 0.5, 0.0);
+    control_p1 = glm::vec3(-1.2 * SINKHOLE_RADIUS, 0.05, 0.0);
+    control_p2 = glm::vec3(-1.0 * SINKHOLE_RADIUS, -0.03, 0.0);
+    control_p3 = glm::vec3(world_center.x, -0.02, 0.0);
 
     // ResetParticlesRainSnow(100, 10, 10);
     ResetParticlesFire(0.25);
@@ -474,6 +493,19 @@ void Tema1::Update(float deltaTimeSeconds)
         glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
         glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
         glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
+        // Also send the heightmap texture
+        TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE1);
+        glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 1);
+
+        // Send a value from [0, 1] to the shader to animate the particles
+        // When it hits 1, reset the time
+        normalized_time += deltaTimeSeconds;
+        if (normalized_time > 1.0f) {
+            normalized_time = 0.0f;
+        }
+
+        glUniform1f(glGetUniformLocation(shader->program, "time"), normalized_time);
+        std::cout << normalized_time << std::endl;
         particleEffectTema1->Render(GetSceneCamera(), shader);
         // glEnable(GL_DEPTH_TEST);
         // glDisable(GL_BLEND);
