@@ -465,6 +465,8 @@ void Tema1::Update(float deltaTimeSeconds)
     {
         frameBuffer->Bind();
 
+        RenderSkybox(skyboxTextureID);
+
         // auto shader = shaders["Render2Texture"];
 
         // TextureManager::GetTexture("default.png")->BindToTextureUnit(GL_TEXTURE0);
@@ -476,6 +478,8 @@ void Tema1::Update(float deltaTimeSeconds)
 
         // TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE0);
         // RenderMesh(meshes["plane"], shader, glm::vec3(0, 0, 0), glm::vec3(0.5f));
+
+
 
         auto shader = shaders["TerrainShader"];
         shader->Use();
@@ -553,8 +557,6 @@ void Tema1::Update(float deltaTimeSeconds)
     // Composition pass
     {
         FrameBuffer::BindDefault();
-
-        RenderSkybox(skyboxTextureID);
 
         auto shader = shaders["Composition"];
         shader->Use();
