@@ -134,9 +134,16 @@ float waterfall(float y_b_closest, float h, float d_bezier, float r_waterfall)
 void main()
 {
     float t = data[gl_VertexID].position.x;
+    float t_step = data[gl_VertexID].position.y;
+    float curve_offset = data[gl_VertexID].position.z;
+
     float dt = deltaTime * 0.3f;
+
     vec3 pos = bezier(t);
-    t += dt;
+    // t += dt;
+    // t += clamp(t_step * dt, 0.0f, 0.01f);
+    // t += 0.00001f;
+    t += 0.001f;
 
     if (t > 1.0f)
     {
@@ -166,6 +173,9 @@ void main()
     }
 
     pos.y += 0.2f;
+    // pos.x += 2.0f * curve_offset;
+    pos.z += rand(vec2(pos.x, pos.z)) * 0.5f - 0.25f;
+    t_step = rand(vec2(t, t_step)) * 0.1f;
 
     // if(pos.y < 0.0f)
     // {
@@ -173,7 +183,7 @@ void main()
     //     spd = data[gl_VertexID].ispeed.xyz;
     // }
 
-    data[gl_VertexID].position.xyz = vec3(t, 0, 0);
+    data[gl_VertexID].position.xyz = vec3(t, t_step, curve_offset);
     data[gl_VertexID].speed.xyz = vec3(0, 0, 0);
 
     vert_normal = v_normal;

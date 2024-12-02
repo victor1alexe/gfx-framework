@@ -191,7 +191,9 @@ void Tema1::ResetParticlesFire(float radius)
 
         // set the pos and speed to match the bezier curve
         float t = i / static_cast<float>(nrParticles);
-        glm::vec3 pos = glm::vec3(t, 0, 0);
+        float t_step = Rand01() * 0.01f + 0.01f;
+        float curve_offset = Rand01() * 0.1f;
+        glm::vec3 pos = glm::vec3(t, t_step, curve_offset);
         glm::vec3 speed = glm::vec3(0, 0, 0);
         float lifetime = 1;
 
@@ -505,7 +507,7 @@ void Tema1::Update(float deltaTimeSeconds)
         }
 
         glUniform1f(glGetUniformLocation(shader->program, "time"), normalized_time);
-        std::cout << normalized_time << std::endl;
+        // std::cout << normalized_time << std::endl;
         particleEffectTema1->Render(GetSceneCamera(), shader);
         // glEnable(GL_DEPTH_TEST);
         // glDisable(GL_BLEND);

@@ -9,7 +9,7 @@
 #define HILL 2
 
 #define SINKHOLE_RADIUS 1.0f
-#define WATERFALL_RADIUS 0.1f
+#define WATERFALL_RADIUS 0.3f
 #define HEIGHT_MAX 0.3f
 #define GLOBAL_NOISE_FACTOR 5.0f
 
