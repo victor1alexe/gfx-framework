@@ -2,11 +2,50 @@
 
 #include <vector>
 #include <iostream>
+#include <limits>
 
 #include "stb/stb_image.h" // Use stb_image to load textures
 
 using namespace std;
 using namespace m2;
+
+struct Particle
+{
+    glm::vec4 position;
+    glm::vec4 speed;
+    glm::vec4 initialPos;
+    glm::vec4 initialSpeed;
+    float delay;
+    float initialDelay;
+    float lifetime;
+    float initialLifetime;
+
+    Particle() {}
+
+    Particle(const glm::vec4 &pos, const glm::vec4 &speed)
+    {
+        SetInitial(pos, speed);
+    }
+
+    void SetInitial(const glm::vec4 &pos, const glm::vec4 &speed,
+        float delay = 0, float lifetime = 0)
+    {
+        position = pos;
+        initialPos = pos;
+
+        this->speed = speed;
+        initialSpeed = speed;
+
+        this->delay = delay;
+        initialDelay = delay;
+
+        this->lifetime = lifetime;
+        initialLifetime = lifetime;
+    }
+};
+
+
+ParticleEffect<Particle> *particleEffectTema1;
 
 // Generates a random value between 0 and 1.
 inline float Rand01()
@@ -99,37 +138,6 @@ unsigned int Tema1::UploadCubeMapTexture(const std::string &pos_x, const std::st
     return textureID;
 }
 
-GLuint Tema1::LoadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z)
-{
-    int width, height, chn;
-
-    unsigned char* data_pos_x = stbi_load(pos_x.c_str(), &width, &height, &chn, 0);
-    unsigned char* data_pos_y = stbi_load(pos_y.c_str(), &width, &height, &chn, 0);
-    unsigned char* data_pos_z = stbi_load(pos_z.c_str(), &width, &height, &chn, 0);
-    unsigned char* data_neg_x = stbi_load(neg_x.c_str(), &width, &height, &chn, 0);
-    unsigned char* data_neg_y = stbi_load(neg_y.c_str(), &width, &height, &chn, 0);
-    unsigned char* data_neg_z = stbi_load(neg_z.c_str(), &width, &height, &chn, 0);
-
-    GLuint textureID = 0;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_x);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_x);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_y);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_y);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_z);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_z);
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    return textureID;
-}
-
 void Tema1::RenderSkybox(GLuint skyboxTextureID)
 {
     auto shader = shaders["Skybox"];
@@ -156,31 +164,70 @@ void Tema1::RenderSkybox(GLuint skyboxTextureID)
     glDepthFunc(GL_LESS);
 }
 
-void Tema1::ManualRenderSkybox(GLuint VAO, GLuint textureID, Shader *shader)
+void Tema1::ResetParticlesFire(float radius)
 {
-    glDepthFunc(GL_LEQUAL);
-    
-    shader->Use();
+    unsigned int nrParticles = 5000;
 
-    int loc_model_matrix = shader->GetUniformLocation("Model");
-    glUniformMatrix4fv(loc_model_matrix, 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
+    particleEffectTema1 = new ParticleEffect<Particle>();
+    particleEffectTema1->Generate(nrParticles, true);
 
-    int loc_view_matrix = shader->GetUniformLocation("View");
-    glm::mat4 view = glm::mat4(glm::mat3(GetSceneCamera()->GetViewMatrix()));
-    glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(view));
+    auto particleSSBO = particleEffectTema1->GetParticleBuffer();
+    Particle* data = const_cast<Particle*>(particleSSBO->GetBuffer());
 
-    int loc_projection_matrix = shader->GetUniformLocation("Projection");
-    glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(GetSceneCamera()->GetProjectionMatrix()));
+    for (unsigned int i = 0; i < nrParticles; i++)
+    {
+        glm::vec3 pos(1);
+        pos.x = (rand() % 100 - 50)/ 100.0f ;
+        pos.y = (rand() % 100 - 50)/ 100.0f;
+        pos.z = (rand() % 100 - 50)/ 100.0f;
+        pos = glm::normalize(pos) * radius ;
 
-    glBindVertexArray(VAO);
+        glm::vec3 speed(0);
+        speed = glm::normalize(glm::vec3(0, 5, 0) - glm::vec3(pos));
+        speed *= (rand() % 100 / 100.0f);
+        speed += glm::vec3(rand() % 5 / 5.0f, rand() % 5 / 5.0f, rand() % 5 / 5.0f) * 0.2f;
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+        float lifetime = 1 + (rand() % 100 / 100.0f);
 
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+        data[i].SetInitial(glm::vec4 (pos, 1), glm::vec4 (speed, 0), 0, lifetime);
+    }
 
-    glBindVertexArray(0);
-    glDepthFunc(GL_LESS);
+    particleSSBO->SetBufferData(data);
+}
+
+void Tema1::ResetParticlesRainSnow(int xSize, int ySize, int zSize)
+{
+    unsigned int nrParticles = 5000;
+
+    particleEffectTema1 = new ParticleEffect<Particle>();
+    particleEffectTema1->Generate(nrParticles, true);
+
+    auto particleSSBO = particleEffectTema1->GetParticleBuffer();
+    Particle* data = const_cast<Particle*>(particleSSBO->GetBuffer());
+
+
+    int xhSize = xSize / 2;
+    int yhSize = ySize / 2;
+    int zhSize = zSize / 2;
+
+    for (unsigned int i = 0; i < nrParticles; i++)
+    {
+        glm::vec4 pos(1);
+        pos.x = (rand() % xSize - xhSize) / 10.0f;
+        pos.y = (rand() % ySize - yhSize) / 10.0f;
+        pos.z = (rand() % zSize - zhSize) / 10.0f;
+
+        glm::vec4 speed(0);
+        speed.x = - (rand() % 20 - 10) / 10.0f;
+        speed.z = - (rand() % 20 - 10) / 10.0f;
+        speed.y = - (rand() % 2 + 2.0f);
+
+        float delay = (rand() % 100 / 100.0f) * 3.0f;
+
+        data[i].SetInitial(pos, speed, delay);
+    }
+
+    particleSSBO->SetBufferData(data);
 }
 
 Texture2D* Tema1::CreateRandomTexture(unsigned int width, unsigned int height)
@@ -237,6 +284,13 @@ void Tema1::Init()
 
     TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "ground.jpg");
     TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "terrain_textures"), "heightmap3.png", "heightmap");
+    TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "rain.png");
+
+    // ResetParticlesRainSnow(100, 10, 10);
+    ResetParticlesFire(0.25);
+
+    generator_position = glm::vec3(0, 0, 0);
+    offset = 0.05f;
 
     {
         Mesh* mesh = new Mesh("box");
@@ -272,72 +326,6 @@ void Tema1::Init()
         meshes[mesh->GetMeshID()] = mesh;
     }
 
-    // Create manual skybox
-    
-    float skyboxVertices[] = {
-        // positions          
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        -1.0f,  1.0f, -1.0f,
-        1.0f,  1.0f, -1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-        1.0f, -1.0f,  1.0f
-    };
-
-    GLuint skyboxVBO;
-    glGenVertexArrays(1, &skyboxVAO);
-    glGenBuffers(1, &skyboxVBO);
-    glBindVertexArray(skyboxVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    
-
-    // Get skybox texture
-    // skyboxTextureID = LoadCubeMapTexture(
-    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "pos_x.png"),
-    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "pos_y.png"),
-    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "pos_z.png"),
-    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "neg_x.png"),
-    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "neg_y.png"),
-    //     PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night", "neg_z.png")
-    // );
 
     std::string texture_path = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night");
     skyboxTextureID = UploadCubeMapTexture(
@@ -385,6 +373,16 @@ void Tema1::Init()
         shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Terrain.vs"), GL_VERTEX_SHADER);
         shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Terrain.gs"), GL_GEOMETRY_SHADER);
         shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Terrain.fs"), GL_FRAGMENT_SHADER);
+        shader->CreateAndLink();
+        shaders[shader->GetName()] = shader;
+    }
+
+    // Load particle shader
+    {
+        Shader *shader = new Shader("RainSnow");
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Particle_fireworks.VS.glsl"), GL_VERTEX_SHADER);
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Particle.GS.glsl"), GL_GEOMETRY_SHADER);
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Particle_simple.FS.glsl"), GL_FRAGMENT_SHADER);
         shader->CreateAndLink();
         shaders[shader->GetName()] = shader;
     }
@@ -465,7 +463,20 @@ void Tema1::Update(float deltaTimeSeconds)
     {
         frameBuffer->Bind();
 
-        RenderSkybox(skyboxTextureID);
+        // glLineWidth(3);
+        // glEnable(GL_BLEND);
+        // glDisable(GL_DEPTH_TEST);
+        // glBlendFunc(GL_ONE, GL_ONE);
+        // glBlendEquation(GL_FUNC_ADD);
+        auto shader = shaders["RainSnow"];
+        shader->Use();
+        TextureManager::GetTexture("rain.png")->BindToTextureUnit(GL_TEXTURE0);
+        glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
+        glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
+        glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
+        particleEffectTema1->Render(GetSceneCamera(), shader);
+        // glEnable(GL_DEPTH_TEST);
+        // glDisable(GL_BLEND);
 
         // auto shader = shaders["Render2Texture"];
 
@@ -479,9 +490,7 @@ void Tema1::Update(float deltaTimeSeconds)
         // TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE0);
         // RenderMesh(meshes["plane"], shader, glm::vec3(0, 0, 0), glm::vec3(0.5f));
 
-
-
-        auto shader = shaders["TerrainShader"];
+        shader = shaders["TerrainShader"];
         shader->Use();
         TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
         TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE1);
@@ -493,6 +502,8 @@ void Tema1::Update(float deltaTimeSeconds)
         glUniform1i(loc_texture, 1);
 
         RenderMeshInstanced(meshes["point"], shader, glm::mat4(1), no_of_instances);
+
+        RenderSkybox(skyboxTextureID);
     }
 
     // ------------------------------------------------------------------------

@@ -78,10 +78,6 @@ void Lab4::Init()
     // Load textures
     {
         TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "particle2.png");
-
-        // TODO(student): Load images "rain.png", "snowflake.png" and "fire.png" as
-        // textures, similar to "particle2.png", loaded above. The images can be
-        // found in the same directory as "particle2.png"
         TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "rain.png");
         TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "snowflake.png");
         TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "fire2.png");

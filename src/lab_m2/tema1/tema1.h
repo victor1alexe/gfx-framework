@@ -6,7 +6,7 @@
 #include "components/simple_scene.h"
 #include "components/transform.h"
 #include "core/gpu/frame_buffer.h"
-
+#include "core/gpu/particle_effect.h"
 
 namespace m2
 {
@@ -47,6 +47,9 @@ namespace m2
         void ManualRenderSkybox(GLuint VAO, GLuint textureID, Shader *shader);
         unsigned int UploadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z);
 
+        void ResetParticlesRainSnow(int xSize, int ySize, int zSize);
+        void ResetParticlesFire(float radius);
+
      private:
          FrameBuffer *frameBuffer;
          FrameBuffer *lightBuffer;
@@ -69,5 +72,8 @@ namespace m2
          GLuint skyboxVAO;
 
          Texture2D *heightmap_texture;
+
+         glm::vec3 generator_position;
+         float offset;
     };
 }   // namespace m2
