@@ -22,6 +22,17 @@ void main()
     // in order to render a cubemap in one pass using gl_Layer. Use the "viewMatrices"
     // attribute according to the corresponding layer.
 
+    for (layer = 0; layer < 6; layer++) {
+        gl_Layer = layer;
+        for (i = 0; i < gl_in.length(); i++) {
+            frag_position = geom_position[i];
+            frag_texture_coord = geom_texture_coord[i];
+            gl_Position = Projection * viewMatrices[layer] * gl_in[i].gl_Position;
+            EmitVertex();
+        }
+        EndPrimitive();
+    }
+
     for (i = 0; i < gl_in.length(); i++) {
          frag_position = geom_position[i];
          frag_texture_coord = geom_texture_coord[i];

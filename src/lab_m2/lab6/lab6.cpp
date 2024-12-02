@@ -293,6 +293,8 @@ unsigned int Lab6::UploadCubeMapTexture(const std::string &pos_x, const std::str
 
     unsigned int textureID = 0;
     // TODO(student): Create the texture
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
     // TODO(student): Bind the texture
 
@@ -314,6 +316,12 @@ unsigned int Lab6::UploadCubeMapTexture(const std::string &pos_x, const std::str
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     // TODO(student): Load texture information for each face
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_x);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_x);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_y);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_y);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_z);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_z);
 
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     if (GetOpenGLError() == GL_INVALID_OPERATION)
@@ -339,13 +347,18 @@ void Lab6::CreateFramebuffer(int width, int height)
     // declared in lab6.h
 
     // TODO(student): Generate and bind the framebuffer
+    glGenFramebuffers(1, &framebuffer_object);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_object);
+
 
 
     // TODO(student): Generate and bind the color texture
+    glGenTextures(1, &color_texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, color_texture);
+
 
 
     // TODO(student): Initialize the color textures
-
 
 
     if (color_texture) {
@@ -378,9 +391,21 @@ void Lab6::CreateFramebuffer(int width, int height)
     }
 
     // TODO(student): Generate and bind the depth texture
+    glGenTextures(1, &depth_texture);
+    glBindTexture(GL_TEXTURE_2D, depth_texture);
 
 
     // TODO(student): Initialize the depth textures
+    if (depth_texture) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        // Bind the depth textures to the framebuffer as a depth attachment
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture, 0);
+    }
 
 
     if (depth_texture) {

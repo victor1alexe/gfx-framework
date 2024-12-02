@@ -19,6 +19,11 @@ void main()
     out_world_position = vec4(world_position, 1);
     out_world_normal = vec4(normalize(world_normal), 0);
     out_color = texture(texture_1, text_coord);
+
+    if (out_color.a < 0.1)
+    {
+        discard;
+    }
 }
 
 

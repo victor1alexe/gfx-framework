@@ -11,7 +11,7 @@
 using namespace std;
 using namespace m2;
 
-struct Particle
+struct ParticleTema1
 {
     glm::vec4 position;
     glm::vec4 speed;
@@ -21,16 +21,20 @@ struct Particle
     float initialDelay;
     float lifetime;
     float initialLifetime;
+    float t_bezier;
+    float initial_t_bezier;
+    float t_step;
+    float curve_offset;
 
-    Particle() {}
+    ParticleTema1() {}
 
-    Particle(const glm::vec4 &pos, const glm::vec4 &speed)
+    ParticleTema1(const glm::vec4 &pos, const glm::vec4 &speed)
     {
         SetInitial(pos, speed);
     }
 
     void SetInitial(const glm::vec4 &pos, const glm::vec4 &speed,
-        float delay = 0, float lifetime = 0)
+        float delay = 0, float lifetime = 0, float t_bezier = 0, float t_step = 0, float curve_offset = 0)
     {
         position = pos;
         initialPos = pos;
@@ -43,11 +47,17 @@ struct Particle
 
         this->lifetime = lifetime;
         initialLifetime = lifetime;
+
+        this->t_bezier = t_bezier;
+        initial_t_bezier = t_bezier;
+
+        this->t_step = t_step;
+        this->curve_offset = curve_offset;
     }
 };
 
 
-ParticleEffect<Particle> *particleEffectTema1;
+ParticleEffect<ParticleTema1> *particleEffectTema1;
 
 // Generates a random value between 0 and 1.
 inline float Rand01()
@@ -168,36 +178,24 @@ void Tema1::RenderSkybox(GLuint skyboxTextureID)
 
 void Tema1::ResetParticlesFire(float radius)
 {
-    unsigned int nrParticles = 100;
+    unsigned int nrParticles = 1000;
 
-    particleEffectTema1 = new ParticleEffect<Particle>();
+    particleEffectTema1 = new ParticleEffect<ParticleTema1>();
     particleEffectTema1->Generate(nrParticles, true);
 
     auto particleSSBO = particleEffectTema1->GetParticleBuffer();
-    Particle* data = const_cast<Particle*>(particleSSBO->GetBuffer());
+    ParticleTema1* data = const_cast<ParticleTema1*>(particleSSBO->GetBuffer());
 
     for (unsigned int i = 0; i < nrParticles; i++)
     {
-        // glm::vec3 pos(1);
-        // pos.x = (rand() % 100 - 50)/ 100.0f ;
-        // pos.y = (rand() % 100 - 50)/ 100.0f;
-        // pos.z = (rand() % 100 - 50)/ 100.0f;
-        // pos = glm::normalize(pos) * radius ;
-
-        // glm::vec3 speed(0);
-        // speed = glm::normalize(glm::vec3(0, 5, 0) - glm::vec3(pos));
-        // speed *= (rand() % 100 / 100.0f);
-        // speed += glm::vec3(rand() % 5 / 5.0f, rand() % 5 / 5.0f, rand() % 5 / 5.0f) * 0.2f;
-
-        // set the pos and speed to match the bezier curve
-        float t = i / static_cast<float>(nrParticles);
-        float t_step = Rand01() * 0.01f + 0.01f;
-        float curve_offset = Rand01() * 0.1f;
-        glm::vec3 pos = glm::vec3(t, t_step, curve_offset);
+        glm::vec3 pos = glm::vec3(0, 0, 0);
         glm::vec3 speed = glm::vec3(0, 0, 0);
+        float t = i / static_cast<float>(nrParticles);
+        // std::cout << "particle " << i << " t: " << t << std::endl;
+        float t_step = Rand01() * 0.3f + 0.1f;
+        float curve_offset = Rand01() * 0.5f - 0.25f;
         float lifetime = 1;
-
-        data[i].SetInitial(glm::vec4 (pos, 1), glm::vec4 (speed, 0), 0, lifetime);
+        data[i].SetInitial(glm::vec4(pos, 1), glm::vec4(speed, 0), 0, lifetime, t, t_step, curve_offset);
     }
 
     particleSSBO->SetBufferData(data);
@@ -215,11 +213,11 @@ void Tema1::ResetParticlesRainSnow(int xSize, int ySize, int zSize)
 {
     unsigned int nrParticles = 5000;
 
-    particleEffectTema1 = new ParticleEffect<Particle>();
+    particleEffectTema1 = new ParticleEffect<ParticleTema1>();
     particleEffectTema1->Generate(nrParticles, true);
 
     auto particleSSBO = particleEffectTema1->GetParticleBuffer();
-    Particle* data = const_cast<Particle*>(particleSSBO->GetBuffer());
+    ParticleTema1* data = const_cast<ParticleTema1*>(particleSSBO->GetBuffer());
 
 
     int xhSize = xSize / 2;
@@ -300,7 +298,7 @@ void Tema1::Init()
 
     TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "ground.jpg");
     TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "terrain_textures"), "heightmap3.png", "heightmap");
-    TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES), "rain.png");
+    TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1"), "droplet.png", "droplet");
 
     control_p0 = glm::vec3(-2.0 * SINKHOLE_RADIUS, 0.5, 0.0);
     control_p1 = glm::vec3(-1.2 * SINKHOLE_RADIUS, 0.05, 0.0);
@@ -358,6 +356,7 @@ void Tema1::Init()
         PATH_JOIN(texture_path, "neg_z.png")
     );
 
+    // std::cout << "Skybox texture ID: " << skyboxTextureID << std::endl;
     // Load skybox shader
     {
         Shader *shader = new Shader("Skybox");
@@ -386,6 +385,14 @@ void Tema1::Init()
         meshes["point"] = new Mesh("point");
         meshes["point"]->InitFromData(vertices, indices);
         meshes["point"]->SetDrawMode(GL_POINTS);
+    }
+
+    {
+        Shader *shader = new Shader("Reflection");
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Reflexion.VS"), GL_VERTEX_SHADER);
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Reflexion.FS"), GL_FRAGMENT_SHADER);
+        shader->CreateAndLink();
+        shaders[shader->GetName()] = shader;
     }
 
     // Load terrain shaders
@@ -484,33 +491,35 @@ void Tema1::Update(float deltaTimeSeconds)
     {
         frameBuffer->Bind();
 
-        // glLineWidth(3);
-        // glEnable(GL_BLEND);
-        // glDisable(GL_DEPTH_TEST);
-        // glBlendFunc(GL_ONE, GL_ONE);
-        // glBlendEquation(GL_FUNC_ADD);
-        auto shader = shaders["RainSnow"];
+        auto shader = shaders["Reflection"];
         shader->Use();
-        TextureManager::GetTexture("rain.png")->BindToTextureUnit(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTextureID);
+        int loc_texture = shader->GetUniformLocation("skybox");
+        glUniform1i(loc_texture, 0);
+        // get camera direction
+        // glm::vec3 cameraPos = GetSceneCamera()->m_transform->GetWorldPosition();
+        // int loc_cameraPos = shader->GetUniformLocation("cameraPos");
+        // glUniform3fv(loc_cameraPos, 1, glm::value_ptr(cameraPos));
+        RenderMesh(meshes["plane"], shader, glm::vec3(0, 0.4f, 0), glm::vec3(0.1f));
+
+        shader = shaders["RainSnow"];
+        shader->Use();
+        TextureManager::GetTexture("droplet")->BindToTextureUnit(GL_TEXTURE0);
         glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
         glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
         glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
         // Also send the heightmap texture
         TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE1);
         glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 1);
-
         // Send a value from [0, 1] to the shader to animate the particles
         // When it hits 1, reset the time
         normalized_time += deltaTimeSeconds;
         if (normalized_time > 1.0f) {
             normalized_time = 0.0f;
         }
-
         glUniform1f(glGetUniformLocation(shader->program, "time"), normalized_time);
-        // std::cout << normalized_time << std::endl;
         particleEffectTema1->Render(GetSceneCamera(), shader);
-        // glEnable(GL_DEPTH_TEST);
-        // glDisable(GL_BLEND);
 
         // auto shader = shaders["Render2Texture"];
 
@@ -521,9 +530,6 @@ void Tema1::Update(float deltaTimeSeconds)
         //     RenderMesh(meshes["sphere"], shader, model);
         // }
 
-        // TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE0);
-        // RenderMesh(meshes["plane"], shader, glm::vec3(0, 0, 0), glm::vec3(0.5f));
-
         shader = shaders["TerrainShader"];
         shader->Use();
         TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
@@ -532,7 +538,7 @@ void Tema1::Update(float deltaTimeSeconds)
         int loc_heightmap = shader->GetUniformLocation("heightmap");
         glUniform1i(loc_heightmap, 0);
 
-        int loc_texture = shader->GetUniformLocation("texture_terrain");
+        loc_texture = shader->GetUniformLocation("texture_terrain");
         glUniform1i(loc_texture, 1);
 
         RenderMeshInstanced(meshes["point"], shader, glm::mat4(1), no_of_instances);
@@ -696,13 +702,11 @@ void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods)
 
 void Tema1::OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods)
 {
-    // Add mouse button release event
 }
 
 
 void Tema1::OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY)
 {
-    // Treat mouse scroll event
 }
 
 

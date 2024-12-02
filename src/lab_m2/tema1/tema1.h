@@ -54,6 +54,7 @@ namespace m2
      private:
          FrameBuffer *frameBuffer;
          FrameBuffer *lightBuffer;
+         FrameBuffer *reflexionBuffer;
 
          std::vector<LightInfoTema1> lights;
 
