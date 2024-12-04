@@ -45,7 +45,7 @@ struct Particle
 vec3 world_center = vec3(0.0, 0.0, 0.0);
 vec2 terrain_size = vec2(8, 8);
 vec3 terrain_first_v_pos = world_center - vec3(terrain_size.x / 2.0f, 0, terrain_size.y / 2.0f);
-vec2 resolution = vec2(512, 512);
+vec2 resolution = vec2(64, 64);
 
 vec3 control_p0 = vec3(-2.0 * SINKHOLE_RADIUS, 0.5, 0.0);
 vec3 control_p1 = vec3(-1.2 * SINKHOLE_RADIUS, 0.05, 0.0);

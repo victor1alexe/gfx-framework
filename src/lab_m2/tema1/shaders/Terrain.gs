@@ -47,7 +47,7 @@ vec3 world_center = vec3(0, 0, 0);
 vec2 terrain_size = vec2(8, 8);
 vec3 terrain_first_v_pos = world_center - vec3(terrain_size.x / 2.0f, 0, terrain_size.y / 2.0f);
 
-vec2 resolution = vec2(512, 512);
+vec2 resolution = vec2(64, 64);
 
 int v_input_row = instance[0] / int(resolution.y); // row of the first vertex of the quad
 int v_input_col = instance[0] % int(resolution.x); // column of the first vertex of the quad

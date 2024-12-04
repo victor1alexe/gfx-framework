@@ -45,8 +45,7 @@ int main(int argc, char **argv)
 
     // Create a new 3D world and start running it
     World *world = new m2::Tema1();
-    // World *world = new m2::Lab6();
-    //  World *world = new m2::Lab4();
+    // World *world = new m2::Lab8();
     
 
 

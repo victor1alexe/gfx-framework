@@ -5,6 +5,7 @@
 
 #include "components/simple_scene.h"
 #include "components/transform.h"
+
 #include "core/gpu/frame_buffer.h"
 #include "core/gpu/particle_effect.h"
 
@@ -42,9 +43,9 @@ namespace m2
         void LoadShader(const std::string &fileName);
         void RenderMeshInstanced(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, int instances, const glm::vec3 &color = glm::vec3(1));
         Texture2D* CreateRandomTexture(unsigned int width, unsigned int height);
-        GLuint LoadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z);
+        // GLuint LoadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z);
         void RenderSkybox(GLuint skyboxTextureID);
-        void ManualRenderSkybox(GLuint VAO, GLuint textureID, Shader *shader);
+        // void ManualRenderSkybox(GLuint VAO, GLuint textureID, Shader *shader);
         unsigned int UploadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z);
 
         void ResetParticlesRainSnow(int xSize, int ySize, int zSize);
@@ -52,33 +53,33 @@ namespace m2
         glm::vec3 CalculateBezier(float t);
 
      private:
-         FrameBuffer *frameBuffer;
-         FrameBuffer *lightBuffer;
-         FrameBuffer *reflexionBuffer;
+        FrameBuffer *frameBuffer;
+        FrameBuffer *lightBuffer;
+        FrameBuffer *reflexionBuffer;
 
-         std::vector<LightInfoTema1> lights;
+        std::vector<LightInfoTema1> lights;
 
-         int outputType;
+        int outputType;
 
-         int no_of_instances;
+        int no_of_instances;
 
-         int terrain_size_x = 8;
-         int terrain_size_z = 8;
+        int terrain_size_x = 8;
+        int terrain_size_z = 8;
 
-         int terrain_resolution_x = 512;
-         int terrain_resolution_z = 512;
+        int terrain_resolution_x = 64;
+        int terrain_resolution_z = 64;
 
-         GLenum wireframe = GL_FILL;
+        GLenum polygon_mode = GL_FILL;
 
-         GLuint skyboxTextureID;
-         GLuint skyboxVAO;
+        GLuint skyboxTextureID;
+        GLuint skyboxVAO;
 
-         Texture2D *heightmap_texture;
+        Texture2D *heightmap_texture;
 
-         glm::vec3 generator_position;
-         float offset;
+        glm::vec3 generator_position;
+        float offset;
 
-         glm::vec3 world_center = glm::vec3(0, 0, 0);
+        glm::vec3 world_center = glm::vec3(0, 0, 0);
 
         glm::vec3 control_p0;
         glm::vec3 control_p1;

@@ -71,9 +71,7 @@ Tema1::Tema1()
     no_of_instances = terrain_resolution_x * terrain_resolution_z;
 }
 
-Tema1::~Tema1()
-{
-}
+Tema1::~Tema1() {}
 
 void Tema1::LoadShader(const std::string &name)
 {
@@ -94,18 +92,16 @@ unsigned int Tema1::UploadCubeMapTexture(const std::string &pos_x, const std::st
 {
     int width, height, chn;
 
-    unsigned char* data_pos_x = stbi_load(pos_x.c_str(), &width, &height, &chn, 0);
-    unsigned char* data_pos_y = stbi_load(pos_y.c_str(), &width, &height, &chn, 0);
-    unsigned char* data_pos_z = stbi_load(pos_z.c_str(), &width, &height, &chn, 0);
-    unsigned char* data_neg_x = stbi_load(neg_x.c_str(), &width, &height, &chn, 0);
-    unsigned char* data_neg_y = stbi_load(neg_y.c_str(), &width, &height, &chn, 0);
-    unsigned char* data_neg_z = stbi_load(neg_z.c_str(), &width, &height, &chn, 0);
+    unsigned char *data_pos_x = stbi_load(pos_x.c_str(), &width, &height, &chn, 0);
+    unsigned char *data_pos_y = stbi_load(pos_y.c_str(), &width, &height, &chn, 0);
+    unsigned char *data_pos_z = stbi_load(pos_z.c_str(), &width, &height, &chn, 0);
+    unsigned char *data_neg_x = stbi_load(neg_x.c_str(), &width, &height, &chn, 0);
+    unsigned char *data_neg_y = stbi_load(neg_y.c_str(), &width, &height, &chn, 0);
+    unsigned char *data_neg_z = stbi_load(neg_z.c_str(), &width, &height, &chn, 0);
 
     unsigned int textureID = 0;
-    // TODO(student): Create the texture
-    glGenTextures(1, &textureID);
 
-    // TODO(student): Bind the texture
+    glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -125,7 +121,6 @@ unsigned int Tema1::UploadCubeMapTexture(const std::string &pos_x, const std::st
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    // TODO(student): Load texture information for each face
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_x);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_x);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_y);
@@ -134,10 +129,6 @@ unsigned int Tema1::UploadCubeMapTexture(const std::string &pos_x, const std::st
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_z);
 
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-    if (GetOpenGLError() == GL_INVALID_OPERATION)
-    {
-        cout << "\t[NOTE] : For students : DON'T PANIC! This error should go away when completing the tasks." << std::endl;
-    }
 
     // Free memory
     SAFE_FREE(data_pos_x);
@@ -178,7 +169,7 @@ void Tema1::RenderSkybox(GLuint skyboxTextureID)
 
 void Tema1::ResetParticlesFire(float radius)
 {
-    unsigned int nrParticles = 1000;
+    unsigned int nrParticles = 100;
 
     particleEffectTema1 = new ParticleEffect<ParticleTema1>();
     particleEffectTema1->Generate(nrParticles, true);
@@ -211,7 +202,7 @@ glm::vec3 Tema1::CalculateBezier(float t)
 
 void Tema1::ResetParticlesRainSnow(int xSize, int ySize, int zSize)
 {
-    unsigned int nrParticles = 5000;
+    unsigned int nrParticles = 100;
 
     particleEffectTema1 = new ParticleEffect<ParticleTema1>();
     particleEffectTema1->Generate(nrParticles, true);
@@ -251,21 +242,19 @@ Texture2D* Tema1::CreateRandomTexture(unsigned int width, unsigned int height)
     unsigned int size = width * height * channels;
     unsigned char* data = new unsigned char[size];
 
-    // TODO(student): Generate random texture data
     for (unsigned int i = 0; i < size; i += 3) {
         data[i] = 255 * static_cast<unsigned char>(Rand01());
         data[i + 1] = 255 * static_cast<unsigned char>(Rand01());
         data[i + 2] = 255 * static_cast<unsigned char>(Rand01());
     }
 
-    // TODO(student): Generate and bind the new texture ID
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
 
     if (GLEW_EXT_texture_filter_anisotropic) {
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4);
     }
-    // TODO(student): Set the texture parameters (MIN_FILTER, MAG_FILTER and WRAPPING MODE) using glTexParameteri
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -274,19 +263,15 @@ Texture2D* Tema1::CreateRandomTexture(unsigned int width, unsigned int height)
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     CheckOpenGLError();
 
-    // Use glTexImage2D to set the texture data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
-    // TODO(student): Generate texture mip-maps
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    CheckOpenGLError();
-
-    // Save the texture into a wrapper Texture2D class for using easier later during rendering phase
     Texture2D* texture = new Texture2D();
     texture->Init(textureID, width, height, channels);
 
     SAFE_FREE_ARRAY(data);
+
     return texture;
 }
 
@@ -305,7 +290,6 @@ void Tema1::Init()
     control_p2 = glm::vec3(-1.0 * SINKHOLE_RADIUS, -0.03, 0.0);
     control_p3 = glm::vec3(world_center.x, -0.02, 0.0);
 
-    // ResetParticlesRainSnow(100, 10, 10);
     ResetParticlesFire(0.25);
 
     generator_position = glm::vec3(0, 0, 0);
@@ -387,6 +371,7 @@ void Tema1::Init()
         meshes["point"]->SetDrawMode(GL_POINTS);
     }
 
+    // Load reflection shader
     {
         Shader *shader = new Shader("Reflection");
         shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Reflexion.VS"), GL_VERTEX_SHADER);
@@ -429,53 +414,21 @@ void Tema1::Init()
     lightBuffer->Generate(resolution.x, resolution.y, 1, false);
     //lightBuffer contains 1 texture (light accumulation)
 
-    for (int i = 0; i < 10; ++i)
-    {
+    for (int i = 0; i < 5; ++i) {
         LightInfoTema1 lightInfo;
 
         lightInfo.position = glm::vec3(Rand01() * 6 - 3, 2.5, Rand01() * 6 - 3);
         lightInfo.color = glm::vec3(Rand01(), Rand01(), Rand01());
-        lightInfo.radius = 2;
+        lightInfo.radius = 3;
+
+        if (i == 0)
+            lightInfo.position = glm::vec3(0, 1, 0);
 
         lights.push_back(lightInfo);
     }
 }
 
-void Tema1::FrameStart()
-{
-}
-
-void Tema1::RenderMeshInstanced(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, int instances, const glm::vec3 &color)
-{
-    if (!mesh || !shader || !shader->GetProgramID())
-        return;
-
-    // Render an object using the specified shader
-    glUseProgram(shader->program);
-
-    // Bind model matrix
-    GLint loc_model_matrix = glGetUniformLocation(shader->program, "Model");
-    glUniformMatrix4fv(loc_model_matrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-
-    // Bind view matrix
-    glm::mat4 viewMatrix = GetSceneCamera()->GetViewMatrix();
-    int loc_view_matrix = glGetUniformLocation(shader->program, "View");
-    glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-
-    // Bind projection matrix
-    glm::mat4 projectionMatrix = GetSceneCamera()->GetProjectionMatrix();
-    int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
-    glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
-
-    glPolygonMode(GL_FRONT_AND_BACK, wireframe);
-    glLineWidth(3);
-
-    // Draw the object instanced
-    glBindVertexArray(mesh->GetBuffers()->m_VAO);
-    glDrawElementsInstanced(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, (void*)0, instances);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-}
+void Tema1::FrameStart() {}
 
 void Tema1::Update(float deltaTimeSeconds)
 {
@@ -486,62 +439,89 @@ void Tema1::Update(float deltaTimeSeconds)
         l.position = rotateMatrix * glm::vec4(l.position, 1.0f);
     }
 
+    Mesh *mesh = nullptr;
+    Shader *shader = nullptr;
+   
+    glm::mat4 model = glm::mat4(1);
+    glm::mat4 view = GetSceneCamera()->GetViewMatrix();
+    glm::mat4 projection = GetSceneCamera()->GetProjectionMatrix();
+
     // ------------------------------------------------------------------------
     // Deferred rendering pass
     {
         frameBuffer->Bind();
 
-        auto shader = shaders["Reflection"];
-        shader->Use();
+        mesh = meshes["plane"];
+        shader = shaders["Reflection"];
+
+        glUseProgram(shader->program);
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTextureID);
-        int loc_texture = shader->GetUniformLocation("skybox");
-        glUniform1i(loc_texture, 0);
-        // get camera direction
-        // glm::vec3 cameraPos = GetSceneCamera()->m_transform->GetWorldPosition();
-        // int loc_cameraPos = shader->GetUniformLocation("cameraPos");
-        // glUniform3fv(loc_cameraPos, 1, glm::value_ptr(cameraPos));
-        RenderMesh(meshes["plane"], shader, glm::vec3(0, 0.4f, 0), glm::vec3(0.1f));
+        glUniform1i(shader->GetUniformLocation("skybox"), 0);
+
+        model = glm::translate(glm::mat4(1), glm::vec3(0, 0.5f, 0));
+        glUniformMatrix4fv(shader->GetUniformLocation("Model"), 1, GL_FALSE, glm::value_ptr(model));
+        model = glm::mat4(1);
+        glUniformMatrix4fv(shader->GetUniformLocation("View"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(shader->GetUniformLocation("Projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+        mesh->Render();  
+
 
         shader = shaders["RainSnow"];
-        shader->Use();
-        TextureManager::GetTexture("droplet")->BindToTextureUnit(GL_TEXTURE0);
+
+        glUseProgram(shader->program);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("droplet")->GetTextureID());
+        glUniform1i(glGetUniformLocation(shader->program, "texture"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("heightmap")->GetTextureID());
+        glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 1);
+
         glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
         glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
         glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
-        // Also send the heightmap texture
-        TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE1);
-        glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 1);
-        // Send a value from [0, 1] to the shader to animate the particles
-        // When it hits 1, reset the time
-        normalized_time += deltaTimeSeconds;
-        if (normalized_time > 1.0f) {
-            normalized_time = 0.0f;
-        }
-        glUniform1f(glGetUniformLocation(shader->program, "time"), normalized_time);
+
         particleEffectTema1->Render(GetSceneCamera(), shader);
 
-        // auto shader = shaders["Render2Texture"];
+        mesh = meshes["sphere"];
+        shader = shaders["Render2Texture"];
+    
+        glUseProgram(shader->program);
+    
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("default.png")->GetTextureID());
 
-        // TextureManager::GetTexture("default.png")->BindToTextureUnit(GL_TEXTURE0);
-        // for (auto &l : lights) {
-        //     auto model = glm::translate(glm::mat4(1), l.position);
-        //     model = glm::scale(model, glm::vec3(0.2f));
-        //     RenderMesh(meshes["sphere"], shader, model);
-        // }
+        for (auto &l : lights) {
+            auto model = glm::translate(glm::mat4(1), l.position);
+            model = glm::scale(model, glm::vec3(0.2f));
+    
+            RenderMesh(mesh, shader, model);
+        }
 
+        mesh = meshes["point"];
         shader = shaders["TerrainShader"];
-        shader->Use();
-        TextureManager::GetTexture("heightmap")->BindToTextureUnit(GL_TEXTURE0);
-        TextureManager::GetTexture("ground.jpg")->BindToTextureUnit(GL_TEXTURE1);
+        
+        glUseProgram(shader->program);
 
-        int loc_heightmap = shader->GetUniformLocation("heightmap");
-        glUniform1i(loc_heightmap, 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("heightmap")->GetTextureID());
+        glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 0);
 
-        loc_texture = shader->GetUniformLocation("texture_terrain");
-        glUniform1i(loc_texture, 1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("ground.jpg")->GetTextureID());
+        glUniform1i(glGetUniformLocation(shader->program, "texture_terrain"), 1);
 
-        RenderMeshInstanced(meshes["point"], shader, glm::mat4(1), no_of_instances);
+        glUniformMatrix4fv(glGetUniformLocation(shader->program, "Model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(shader->program, "View"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(shader->program, "Projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        
+        glBindVertexArray(mesh->GetBuffers()->m_VAO);
+        glDrawElementsInstanced(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, (void*)0, no_of_instances);
+        glBindVertexArray(0);
 
         RenderSkybox(skyboxTextureID);
     }
@@ -550,19 +530,19 @@ void Tema1::Update(float deltaTimeSeconds)
     // Lighting pass
     {
         glm::vec3 ambientLight(0.2f);
-        //Set the initial light accumulation in each pixel to be equal to the ambient light.
+
         lightBuffer->SetClearColor(glm::vec4(ambientLight.x, ambientLight.y, ambientLight.z, 1.0f));
         lightBuffer->Bind();
+
         glClearColor(0, 0, 0, 1);
 
-        // Enable buffer color accumulation
         glDepthMask(GL_FALSE);
         glEnable(GL_BLEND);
         glBlendEquation(GL_FUNC_ADD);
         glBlendFunc(GL_ONE, GL_ONE);
 
-        auto shader = shaders["LightPass"];
-        shader->Use();
+        shader = shaders["LightPass"];
+        glUseProgram(shader->program);
 
         {
             int texturePositionsLoc = shader->GetUniformLocation("texture_position");
@@ -585,7 +565,6 @@ void Tema1::Update(float deltaTimeSeconds)
         int loc_resolution = shader->GetUniformLocation("resolution");
         glUniform2i(loc_resolution, resolution.x, resolution.y);
 
-        //Front face culling
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
 
@@ -609,8 +588,8 @@ void Tema1::Update(float deltaTimeSeconds)
     {
         FrameBuffer::BindDefault();
 
-        auto shader = shaders["Composition"];
-        shader->Use();
+        shader = shaders["Composition"];
+        glUseProgram(shader->program);
 
         int outputTypeLoc = shader->GetUniformLocation("output_type");
         glUniform1i(outputTypeLoc, outputType);
@@ -652,63 +631,44 @@ void Tema1::Update(float deltaTimeSeconds)
 
 void Tema1::FrameEnd()
 {
-    DrawCoordinateSystem();
+    // DrawCoordinateSystem();
 }
 
-
-void Tema1::OnInputUpdate(float deltaTime, int mods)
-{
-    // Treat continuous update based on input
-}
+void Tema1::OnInputUpdate(float deltaTime, int mods) {}
 
 void Tema1::OnKeyPress(int key, int mods)
 {
     int index = key - GLFW_KEY_0;
+
+    // Toggle render mode
     if (index >= 0 && index <= 9) {
         outputType = index;
     }
 
-    // Toggle wireframe mode
+    // Toggle polygon mode
     if (key == GLFW_KEY_F) {
-        switch (wireframe) {
+        switch (polygon_mode) {
         case GL_FILL:
-            wireframe = GL_LINE;
+            polygon_mode = GL_LINE;
             break;
         case GL_LINE:
-            wireframe = GL_FILL;
+            polygon_mode = GL_FILL;
+            break;
+        default:
             break;
         }
     }
 }
 
+void Tema1::OnKeyRelease(int key, int mods) {}
 
-void Tema1::OnKeyRelease(int key, int mods)
-{
-    // Add key release event
-}
+void Tema1::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY) {}
 
+void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods) {}
 
-void Tema1::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
-{
-    // Add mouse move event
-}
+void Tema1::OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods) {}
 
-
-void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods)
-{
-    // Add mouse button press event
-}
-
-
-void Tema1::OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods)
-{
-}
-
-
-void Tema1::OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY)
-{
-}
-
+void Tema1::OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) {}
 
 void Tema1::OnWindowResize(int width, int height)
 {
