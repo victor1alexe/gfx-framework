@@ -173,6 +173,7 @@ void main()
     pos.y += 0.2f;
     pos.z += curve_offset;
     pos.y += rand(vec2(curve_offset, time)) * 0.1f;
+    pos.y -= 0.6f;
 
     data[gl_VertexID].position.xyz = vec3(0, 0, 0);
     data[gl_VertexID].speed.xyz = vec3(0, 0, 0);

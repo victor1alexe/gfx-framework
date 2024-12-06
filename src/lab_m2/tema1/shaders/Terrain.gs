@@ -26,7 +26,7 @@ uniform sampler2D heightmap;
 
 // Output
 layout(location = 0) out vec2 tex_coords_out;
-layout(location = 1) out vec3 pos_out;
+layout(location = 1) out vec4 pos_out;
 layout(location = 2) out vec3 normal_out;
 
 struct v_data {
@@ -199,10 +199,14 @@ void main()
 
     // Emit the vertices of the quad
     for (int i = 0; i < NR_EMIT_PER_INSTANCE; i++) {
-        pos_out = v_quad[i].position;
+        v_quad[i].position.y -= 0.6f;
+
+        pos_out = vec4(v_quad[i].position, 1.0f);
         normal_out = quad_normal;
         tex_coords_out = v_quad[i].uv;
+
         gl_Position = Projection * View * vec4(v_quad[i].position, 1.0f);
+
         EmitVertex();
     }
 

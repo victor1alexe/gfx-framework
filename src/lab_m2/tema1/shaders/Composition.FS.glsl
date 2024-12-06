@@ -49,8 +49,7 @@ vec3 light_accumulation()
 
 void main()
 {
-    switch (output_type)
-    {
+    switch (output_type) {
     case 1:
         out_color = vec4(color(), 1);
         break;
@@ -72,8 +71,7 @@ void main()
         break;
 
     case 6:
-        // TODO(student): Multiply the light accumulation sample and the color sample to compute final pixel color.
-        out_color = vec4(color(), 1) * vec4(light_accumulation(), 1.0f);
+        out_color = vec4(color(), 1) * vec4(light_accumulation(), 1);
         break;
 
     default:

@@ -16,6 +16,11 @@ layout(location = 2) out vec4 out_color;
 
 void main()
 {
+    if (world_position.y < 0)
+    {
+        discard;
+    }
+
     out_world_position = vec4(world_position, 1);
     out_world_normal = vec4(normalize(world_normal), 0);
     out_color = texture(texture_1, text_coord);

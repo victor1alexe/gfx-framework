@@ -1,11 +1,5 @@
 #include "lab_m2/tema1/tema1.h"
 
-#include <vector>
-#include <iostream>
-#include <limits>
-
-#include "stb/stb_image.h" // Use stb_image to load textures
-
 #define SINKHOLE_RADIUS 1.0f
 
 using namespace std;
@@ -56,10 +50,8 @@ struct ParticleTema1
     }
 };
 
-
 ParticleEffect<ParticleTema1> *particleEffectTema1;
 
-// Generates a random value between 0 and 1.
 inline float Rand01()
 {
     return rand() / static_cast<float>(RAND_MAX);
@@ -75,7 +67,7 @@ Tema1::~Tema1() {}
 
 void Tema1::LoadShader(const std::string &name)
 {
-    std::string shaderPath = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "lab5", "shaders");
+    std::string shaderPath = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders");
 
     // Create a shader program for particle system
     {
@@ -141,7 +133,21 @@ unsigned int Tema1::UploadCubeMapTexture(const std::string &pos_x, const std::st
     return textureID;
 }
 
-void Tema1::RenderSkybox(GLuint skyboxTextureID)
+void Tema1::RenderMeshCustomView(Mesh * mesh, Shader * shader, const glm::mat4 & modelMatrix, glm::mat4 & view)
+{
+    if (!mesh || !shader || !shader->program)
+        return;
+
+    // Render an object using the specified shader and the specified position
+    shader->Use();
+    glUniformMatrix4fv(shader->loc_view_matrix, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(shader->loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(GetSceneCamera()->GetProjectionMatrix()));
+    glUniformMatrix4fv(shader->loc_model_matrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+    mesh->Render();
+}
+
+void Tema1::RenderSkybox(GLuint skyboxTextureID, glm::mat4 &view)
 {
     auto shader = shaders["Skybox"];
     shader->Use();
@@ -150,7 +156,8 @@ void Tema1::RenderSkybox(GLuint skyboxTextureID)
     glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
 
     int loc_view_matrix = shader->GetUniformLocation("View");
-    glm::mat4 view = glm::mat4(glm::mat3(GetSceneCamera()->GetViewMatrix()));
+    // if (view == glm::mat4(0))
+    //     view = glm::mat4(glm::mat3(GetSceneCamera()->GetViewMatrix()));
     glUniformMatrix4fv(loc_view_matrix, 1, GL_FALSE, glm::value_ptr(view));
 
     int loc_projection_matrix = shader->GetUniformLocation("Projection");
@@ -329,6 +336,12 @@ void Tema1::Init()
         meshes[mesh->GetMeshID()] = mesh;
     }
 
+    // Load butterfly mesh
+    {
+        Mesh *mesh = new Mesh("butterfly");
+        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "custom_models"), "MONARCH.OBJ");
+        meshes[mesh->GetMeshID()] = mesh;
+    }
 
     std::string texture_path = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night");
     skyboxTextureID = UploadCubeMapTexture(
@@ -339,6 +352,16 @@ void Tema1::Init()
         PATH_JOIN(texture_path, "neg_y.png"),
         PATH_JOIN(texture_path, "neg_z.png")
     );
+
+    // std::string texture_path = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "water_scene");
+    // skyboxTextureID = UploadCubeMapTexture(
+    //     PATH_JOIN(texture_path, "pos_x.jpg"),
+    //     PATH_JOIN(texture_path, "pos_y.jpg"),
+    //     PATH_JOIN(texture_path, "pos_z.jpg"),
+    //     PATH_JOIN(texture_path, "neg_x.jpg"),
+    //     PATH_JOIN(texture_path, "neg_y.jpg"),
+    //     PATH_JOIN(texture_path, "neg_z.jpg")
+    // );
 
     // std::cout << "Skybox texture ID: " << skyboxTextureID << std::endl;
     // Load skybox shader
@@ -406,13 +429,20 @@ void Tema1::Init()
 
     auto resolution = window->GetResolution();
 
-    frameBuffer = new FrameBuffer();
-    frameBuffer->Generate(resolution.x, resolution.y, 3);
-    //frameBuffer contains 3 textures (position, normal and color)
+    geometryBuffer = new FrameBuffer();
+    geometryBuffer->Generate(resolution.x, resolution.y, 3);
+    
+    reflexionGeometryBuffer = new FrameBuffer();
+    reflexionGeometryBuffer->Generate(resolution.x, resolution.y, 3);
 
     lightBuffer = new FrameBuffer();
     lightBuffer->Generate(resolution.x, resolution.y, 1, false);
-    //lightBuffer contains 1 texture (light accumulation)
+    
+    reflexionLightAccumulationBuffer = new FrameBuffer();
+    reflexionLightAccumulationBuffer->Generate(resolution.x, resolution.y, 1, false);
+
+    finalReflectionBuffer = new FrameBuffer();
+    finalReflectionBuffer->Generate(resolution.x, resolution.y, 1, false);
 
     for (int i = 0; i < 5; ++i) {
         LightInfoTema1 lightInfo;
@@ -421,8 +451,8 @@ void Tema1::Init()
         lightInfo.color = glm::vec3(Rand01(), Rand01(), Rand01());
         lightInfo.radius = 3;
 
-        if (i == 0)
-            lightInfo.position = glm::vec3(0, 1, 0);
+        // if (i == 0)
+        //     lightInfo.position = glm::vec3(0, 1, 0);
 
         lights.push_back(lightInfo);
     }
@@ -441,135 +471,230 @@ void Tema1::Update(float deltaTimeSeconds)
 
     Mesh *mesh = nullptr;
     Shader *shader = nullptr;
-   
+    glm::vec3 ambientLight(0.2f);
     glm::mat4 model = glm::mat4(1);
     glm::mat4 view = GetSceneCamera()->GetViewMatrix();
     glm::mat4 projection = GetSceneCamera()->GetProjectionMatrix();
 
+    glm::vec3 camera_initial_pos = GetSceneCamera()->m_transform->GetWorldPosition();
+    glm::vec3 camera_initial_forward = GetSceneCamera()->m_transform->GetWorldRotation() * glm::vec3(0, 0, -1);
+    glm::mat4 view_initial = GetSceneCamera()->GetViewMatrix();
+
+    glm::vec3 camera_reflected_pos = glm::vec3(camera_initial_pos.x, -camera_initial_pos.y, camera_initial_pos.z);
+    glm::vec3 camera_reflected_forward = glm::vec3(camera_initial_forward.x, -camera_initial_forward.y, camera_initial_forward.z);
+
+    if (camera_initial_forward.y > 0)
+        camera_reflected_forward.y = camera_initial_forward.y;
+
+    glm::mat4 reflected_view = glm::lookAt(camera_reflected_pos, camera_reflected_pos + camera_reflected_forward, glm::vec3(0, 1, 0));
+
     // ------------------------------------------------------------------------
     // Deferred rendering pass
     {
-        frameBuffer->Bind();
+        // Reflexion Geometry pass
+        {
+            reflexionGeometryBuffer->Bind();
 
-        mesh = meshes["plane"];
-        shader = shaders["Reflection"];
+            // Render particles
+            shader = shaders["RainSnow"];
+            glUseProgram(shader->program);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("droplet")->GetTextureID());
+            glUniform1i(glGetUniformLocation(shader->program, "texture"), 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("heightmap")->GetTextureID());
+            glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 1);
+            glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
+            glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
+            glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
+            particleEffectTema1->RenderCustomView(GetSceneCamera(), shader, no_of_instances, reflected_view);
 
-        glUseProgram(shader->program);
+            // Render light spheres
+            // mesh = meshes["sphere"];
+            mesh = meshes["butterfly"];
+            shader = shaders["Render2Texture"];
+            glUseProgram(shader->program);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("default.png")->GetTextureID());
+            for (auto &l : lights) {
+                model = glm::mat4(1);
+                model = glm::translate(glm::mat4(1), l.position);
+                // model = glm::scale(model, glm::vec3(0.2f));
+                model = glm::scale(model, glm::vec3(2.0f));
+                RenderMeshCustomView(mesh, shader, model, reflected_view);
+            }
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTextureID);
-        glUniform1i(shader->GetUniformLocation("skybox"), 0);
+            mesh = meshes["point"];
+            shader = shaders["TerrainShader"];
+            glUseProgram(shader->program);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("heightmap")->GetTextureID());
+            glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("ground.jpg")->GetTextureID());
+            glUniform1i(glGetUniformLocation(shader->program, "texture_terrain"), 1);
+            glUniformMatrix4fv(glGetUniformLocation(shader->program, "Model"), 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(glGetUniformLocation(shader->program, "View"), 1, GL_FALSE, glm::value_ptr(reflected_view)); // change to reflected view
+            glUniformMatrix4fv(glGetUniformLocation(shader->program, "Projection"), 1, GL_FALSE, glm::value_ptr(projection));
+            glBindVertexArray(mesh->GetBuffers()->m_VAO);
+            glDrawElementsInstanced(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, (void*)0, no_of_instances);
+            glBindVertexArray(0);
 
-        model = glm::translate(glm::mat4(1), glm::vec3(0, 0.5f, 0));
-        glUniformMatrix4fv(shader->GetUniformLocation("Model"), 1, GL_FALSE, glm::value_ptr(model));
-        model = glm::mat4(1);
-        glUniformMatrix4fv(shader->GetUniformLocation("View"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(shader->GetUniformLocation("Projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
-        mesh->Render();  
-
-
-        shader = shaders["RainSnow"];
-
-        glUseProgram(shader->program);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("droplet")->GetTextureID());
-        glUniform1i(glGetUniformLocation(shader->program, "texture"), 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("heightmap")->GetTextureID());
-        glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 1);
-
-        glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
-        glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
-        glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
-
-        particleEffectTema1->Render(GetSceneCamera(), shader);
-
-        mesh = meshes["sphere"];
-        shader = shaders["Render2Texture"];
-    
-        glUseProgram(shader->program);
-    
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("default.png")->GetTextureID());
-
-        for (auto &l : lights) {
-            auto model = glm::translate(glm::mat4(1), l.position);
-            model = glm::scale(model, glm::vec3(0.2f));
-    
-            RenderMesh(mesh, shader, model);
+            // Render skybox
+            glm::mat4 skybox_view = glm::mat4(glm::mat3(reflected_view));
+            RenderSkybox(skyboxTextureID, skybox_view);
         }
 
-        mesh = meshes["point"];
-        shader = shaders["TerrainShader"];
-        
-        glUseProgram(shader->program);
+        // Reflexion Light pass
+        {
+            glm::vec3 ambientLightReflexion(0.8f);
+            reflexionLightAccumulationBuffer->SetClearColor(glm::vec4(ambientLightReflexion.x, ambientLightReflexion.y, ambientLightReflexion.z, 1.0f));
+            reflexionLightAccumulationBuffer->Bind();
+            shader = shaders["LightPass"];
+            int texturePositionsLoc = shader->GetUniformLocation("texture_position");
+            int textureNormalsLoc = shader->GetUniformLocation("texture_normal");
+            int loc_eyePosition = shader->GetUniformLocation("eye_position");
+            auto resolution = window->GetResolution();
+            int loc_resolution = shader->GetUniformLocation("resolution");
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT);
+            glDepthMask(GL_FALSE);
+            glEnable(GL_BLEND);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_ONE, GL_ONE);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("heightmap")->GetTextureID());
-        glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 0);
+            glUseProgram(shader->program);
+            glUniform1i(texturePositionsLoc, 0);
+            reflexionGeometryBuffer->BindTexture(0, GL_TEXTURE0);
+            glUniform1i(textureNormalsLoc, 1);
+            reflexionGeometryBuffer->BindTexture(1, GL_TEXTURE0 + 1);
+            glUniform3fv(loc_eyePosition, 1, glm::value_ptr(camera_initial_pos));
+            glUniform2i(loc_resolution, resolution.x, resolution.y);
 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("ground.jpg")->GetTextureID());
-        glUniform1i(glGetUniformLocation(shader->program, "texture_terrain"), 1);
+            for (auto& lightInfo : lights) {
+                model = glm::mat4(1);
+                model = glm::translate(model, lightInfo.position);
+                model = glm::scale(model, 2 * lightInfo.radius * glm::vec3(1.f, 1.f, 1.f));
 
-        glUniformMatrix4fv(glGetUniformLocation(shader->program, "Model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(shader->program, "View"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(shader->program, "Projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        
-        glBindVertexArray(mesh->GetBuffers()->m_VAO);
-        glDrawElementsInstanced(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, (void*)0, no_of_instances);
-        glBindVertexArray(0);
+                glUniform3fv(glGetUniformLocation(shader->program, "light_position"), 1, glm::value_ptr(lightInfo.position));
+                glUniform3fv(glGetUniformLocation(shader->program, "light_color"), 1, glm::value_ptr(lightInfo.color));
+                glUniform1f(glGetUniformLocation(shader->program, "light_radius"), lightInfo.radius);
+                glUniformMatrix4fv(glGetUniformLocation(shader->program, "Model"), 1, GL_FALSE, glm::value_ptr(model));
+                glUniformMatrix4fv(glGetUniformLocation(shader->program, "View"), 1, GL_FALSE, glm::value_ptr(reflected_view));
+                glUniformMatrix4fv(glGetUniformLocation(shader->program, "Projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-        RenderSkybox(skyboxTextureID);
+                meshes["sphere"]->Render();
+            }
+
+            glDisable(GL_CULL_FACE);
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
+        }
+
+        // World Geometry pass
+        {
+            geometryBuffer->Bind();
+
+            // Render particles
+            shader = shaders["RainSnow"];
+            glUseProgram(shader->program);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("droplet")->GetTextureID());
+            glUniform1i(glGetUniformLocation(shader->program, "texture"), 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("heightmap")->GetTextureID());
+            glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 1);
+            glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
+            glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
+            glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
+            particleEffectTema1->Render(GetSceneCamera(), shader);
+
+            // Render light spheres
+            // mesh = meshes["sphere"];
+            mesh = meshes["butterfly"];
+            shader = shaders["Render2Texture"];
+            glUseProgram(shader->program);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("default.png")->GetTextureID());
+            for (auto &l : lights) {
+                model = glm::mat4(1);
+                model = glm::translate(glm::mat4(1), l.position);
+                // model = glm::scale(model, glm::vec3(0.2f));
+                model = glm::scale(model, glm::vec3(2.0f));
+                RenderMesh(mesh, shader, model);
+            }
+
+            // Render terrain
+            mesh = meshes["point"];
+            shader = shaders["TerrainShader"];
+            glUseProgram(shader->program);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("heightmap")->GetTextureID());
+            glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("ground.jpg")->GetTextureID());
+            glUniform1i(glGetUniformLocation(shader->program, "texture_terrain"), 1);
+            glUniformMatrix4fv(glGetUniformLocation(shader->program, "Model"), 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(glGetUniformLocation(shader->program, "View"), 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(glGetUniformLocation(shader->program, "Projection"), 1, GL_FALSE, glm::value_ptr(projection));
+            glBindVertexArray(mesh->GetBuffers()->m_VAO);
+            glDrawElementsInstanced(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, (void*)0, no_of_instances);
+            glBindVertexArray(0);
+
+            // Render skybox
+            glm::mat4 skybox_view = glm::mat4(glm::mat3(GetSceneCamera()->GetViewMatrix()));
+            RenderSkybox(skyboxTextureID, skybox_view);
+
+            // Render lake
+            mesh = meshes["plane"];
+            shader = shaders["Reflection"];
+            model = glm::mat4(1);
+            model *= glm::scale(glm::mat4(1), glm::vec3(0.045f));
+            glUseProgram(shader->program);
+            glUniform1i(shader->GetUniformLocation("texture_color"), 0);
+            reflexionGeometryBuffer->BindTexture(2, GL_TEXTURE0);
+            glUniform1i(shader->GetUniformLocation("texture_light"), 1);
+            reflexionLightAccumulationBuffer->BindTexture(0, GL_TEXTURE0 + 1);
+            glUniformMatrix4fv(shader->GetUniformLocation("Model"), 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(shader->GetUniformLocation("View"), 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(shader->GetUniformLocation("ViewReflected"), 1, GL_FALSE, glm::value_ptr(reflected_view));
+            glUniformMatrix4fv(shader->GetUniformLocation("Projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+            mesh->Render();
+        }
     }
 
     // ------------------------------------------------------------------------
     // Lighting pass
     {
-        glm::vec3 ambientLight(0.2f);
-
         lightBuffer->SetClearColor(glm::vec4(ambientLight.x, ambientLight.y, ambientLight.z, 1.0f));
         lightBuffer->Bind();
-
+        shader = shaders["LightPass"];
+        int texturePositionsLoc = shader->GetUniformLocation("texture_position");
+        int textureNormalsLoc = shader->GetUniformLocation("texture_normal");
+        auto camera = GetSceneCamera();
+        glm::vec3 cameraPos = camera->m_transform->GetWorldPosition();
+        int loc_eyePosition = shader->GetUniformLocation("eye_position");
+        auto resolution = window->GetResolution();
+        int loc_resolution = shader->GetUniformLocation("resolution");
         glClearColor(0, 0, 0, 1);
-
         glDepthMask(GL_FALSE);
         glEnable(GL_BLEND);
         glBlendEquation(GL_FUNC_ADD);
         glBlendFunc(GL_ONE, GL_ONE);
-
-        shader = shaders["LightPass"];
         glUseProgram(shader->program);
-
-        {
-            int texturePositionsLoc = shader->GetUniformLocation("texture_position");
-            glUniform1i(texturePositionsLoc, 0);
-            frameBuffer->BindTexture(0, GL_TEXTURE0);
-        }
-
-        {
-            int textureNormalsLoc = shader->GetUniformLocation("texture_normal");
-            glUniform1i(textureNormalsLoc, 1);
-            frameBuffer->BindTexture(1, GL_TEXTURE0 + 1);
-        }
-
-        auto camera = GetSceneCamera();
-        glm::vec3 cameraPos = camera->m_transform->GetWorldPosition();
-        int loc_eyePosition = shader->GetUniformLocation("eye_position");
+        glUniform1i(texturePositionsLoc, 0);
+        geometryBuffer->BindTexture(0, GL_TEXTURE0);
+        glUniform1i(textureNormalsLoc, 1);
+        geometryBuffer->BindTexture(1, GL_TEXTURE0 + 1);
         glUniform3fv(loc_eyePosition, 1, glm::value_ptr(cameraPos));
-
-        auto resolution = window->GetResolution();
-        int loc_resolution = shader->GetUniformLocation("resolution");
         glUniform2i(loc_resolution, resolution.x, resolution.y);
-
+        glUniform1i(glGetUniformLocation(shader->program, "is_reflection"), 0);
+        glUniformMatrix4fv(glGetUniformLocation(shader->program, "ViewReflexion"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1)));
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
 
-        for (auto& lightInfo : lights)
-        {
+        for (auto& lightInfo : lights) {
             glUniform3fv(glGetUniformLocation(shader->program, "light_position"), 1, glm::value_ptr(lightInfo.position));
             glUniform3fv(glGetUniformLocation(shader->program, "light_color"), 1, glm::value_ptr(lightInfo.color));
             glUniform1f(glGetUniformLocation(shader->program, "light_radius"), lightInfo.radius);
@@ -578,7 +703,6 @@ void Tema1::Update(float deltaTimeSeconds)
         }
 
         glDisable(GL_CULL_FACE);
-
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
     }
@@ -587,44 +711,32 @@ void Tema1::Update(float deltaTimeSeconds)
     // Composition pass
     {
         FrameBuffer::BindDefault();
-
         shader = shaders["Composition"];
-        glUseProgram(shader->program);
-
         int outputTypeLoc = shader->GetUniformLocation("output_type");
+        int texturePositionsLoc = shader->GetUniformLocation("texture_position");
+        int textureNormalsLoc = shader->GetUniformLocation("texture_normal");
+        int textureColorLoc = shader->GetUniformLocation("texture_color");
+        int textureDepthLoc = shader->GetUniformLocation("texture_depth");
+        int textureLightLoc = shader->GetUniformLocation("texture_light");
+
+        glUseProgram(shader->program);
         glUniform1i(outputTypeLoc, outputType);
 
-        {
-            int texturePositionsLoc = shader->GetUniformLocation("texture_position");
-            glUniform1i(texturePositionsLoc, 1);
-            frameBuffer->BindTexture(0, GL_TEXTURE0 + 1);
-        }
+        glUniform1i(texturePositionsLoc, 1);
+        geometryBuffer->BindTexture(0, GL_TEXTURE0 + 1);
 
-        {
-            int textureNormalsLoc = shader->GetUniformLocation("texture_normal");
-            glUniform1i(textureNormalsLoc, 2);
-            frameBuffer->BindTexture(1, GL_TEXTURE0 + 2);
-        }
+        glUniform1i(textureNormalsLoc, 2);
+        geometryBuffer->BindTexture(1, GL_TEXTURE0 + 2);
 
-        {
-            int textureColorLoc = shader->GetUniformLocation("texture_color");
-            glUniform1i(textureColorLoc, 3);
-            frameBuffer->BindTexture(2, GL_TEXTURE0 + 3);
-        }
+        glUniform1i(textureColorLoc, 3);
+        geometryBuffer->BindTexture(2, GL_TEXTURE0 + 3);
 
-        {
-            int textureDepthLoc = shader->GetUniformLocation("texture_depth");
-            glUniform1i(textureDepthLoc, 4);
-            frameBuffer->BindDepthTexture(GL_TEXTURE0 + 4);
-        }
+        glUniform1i(textureDepthLoc, 4);
+        geometryBuffer->BindDepthTexture(GL_TEXTURE0 + 4);
 
-        {
-            int textureLightLoc = shader->GetUniformLocation("texture_light");
-            glUniform1i(textureLightLoc, 5);
-            lightBuffer->BindTexture(0, GL_TEXTURE0 + 5);
-        }
+        glUniform1i(textureLightLoc, 5);
+        lightBuffer->BindTexture(0, GL_TEXTURE0 + 5);
 
-        // Render the object again but with different properties
         RenderMesh(meshes["quad"], shader, glm::vec3(0, 0, 0));
     }
 }
@@ -673,6 +785,6 @@ void Tema1::OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) {}
 void Tema1::OnWindowResize(int width, int height)
 {
     // Treat window resize event
-    frameBuffer->Resize(width, height, 32);
+    geometryBuffer->Resize(width, height, 32);
     lightBuffer->Resize(width, height, 32);
 }

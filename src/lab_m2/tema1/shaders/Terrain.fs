@@ -2,7 +2,7 @@
 
 // Input
 // layout(location = 0) in vec2 uv;
-layout(location = 1) in vec3 world_position;
+layout(location = 1) in vec4 world_position;
 layout(location = 2) in vec3 world_normal;
 
 uniform sampler2D heightmap;
@@ -24,9 +24,13 @@ vec2 normalize_pos(vec2 pos)
 
 void main()
 {
-    out_world_position = vec4(world_position, 1);
+    if (world_position.y < 0.0f) {
+        discard;
+    }
+
+    out_world_position = world_position / world_position.w;
     out_world_normal = vec4(normalize(world_normal), 0);
     // out_color = vec4(world_normal, 1);
-    vec2 uv = normalize_pos(world_position.xz);
+    vec2 uv = normalize_pos(world_position.xz / world_position.w);
     out_color = texture(texture_terrain, uv);
 }

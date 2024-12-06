@@ -2,12 +2,16 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
+#include <limits>
 
 #include "components/simple_scene.h"
 #include "components/transform.h"
 
 #include "core/gpu/frame_buffer.h"
 #include "core/gpu/particle_effect.h"
+
+#include "stb/stb_image.h"
 
 namespace m2
 {
@@ -41,10 +45,12 @@ namespace m2
         void OnWindowResize(int width, int height) override;
 
         void LoadShader(const std::string &fileName);
+
         void RenderMeshInstanced(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, int instances, const glm::vec3 &color = glm::vec3(1));
         Texture2D* CreateRandomTexture(unsigned int width, unsigned int height);
         // GLuint LoadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z);
-        void RenderSkybox(GLuint skyboxTextureID);
+        void RenderMeshCustomView(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, glm::mat4 &view);
+        void RenderSkybox(GLuint skyboxTextureID, glm::mat4 &view);
         // void ManualRenderSkybox(GLuint VAO, GLuint textureID, Shader *shader);
         unsigned int UploadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z);
 
@@ -53,9 +59,13 @@ namespace m2
         glm::vec3 CalculateBezier(float t);
 
      private:
-        FrameBuffer *frameBuffer;
+        FrameBuffer *geometryBuffer;
         FrameBuffer *lightBuffer;
         FrameBuffer *reflexionBuffer;
+        FrameBuffer *finalReflectionBuffer;
+
+        FrameBuffer *reflexionGeometryBuffer;
+        FrameBuffer *reflexionLightAccumulationBuffer;
 
         std::vector<LightInfoTema1> lights;
 
