@@ -80,27 +80,12 @@ void Tema1::LoadShader(const std::string &name)
     }
 }
 
-void Tema1::CreateFramebuffer(int width, int height)
+void Tema1::CreateFramebufferCubeMap(int width, int height, unsigned int &framebuffer_object, unsigned int &color_texture, unsigned int &depth_texture)
 {
-    // TODO(student): In this method, use the attributes
-    // 'framebuffer_object', 'color_texture'
-    // declared in lab6.h
-
-    // TODO(student): Generate and bind the framebuffer
     glGenFramebuffers(1, &particles_framebuffer_object);
     glBindFramebuffer(GL_FRAMEBUFFER, particles_framebuffer_object);
-
-
-
-    // TODO(student): Generate and bind the color texture
     glGenTextures(1, &particles_color_texture);
     glBindTexture(GL_TEXTURE_CUBE_MAP, particles_color_texture);
-
-
-
-    // TODO(student): Initialize the color textures
-
-
     if (particles_color_texture) {
         //cubemap params
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -130,30 +115,22 @@ void Tema1::CreateFramebuffer(int width, int height)
 
     }
 
-    // TODO(student): Generate and bind the depth texture
+
     glGenTextures(1, &particles_depth_texture);
     glBindTexture(GL_TEXTURE_2D, particles_depth_texture);
-
-
-    // TODO(student): Initialize the depth textures
     if (particles_depth_texture) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-        // Bind the depth textures to the framebuffer as a depth attachment
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, particles_depth_texture, 0);
     }
 
-
-    if (particles_depth_texture) {
+    if (particles_depth_texture)
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, particles_depth_texture, 0);
-    }
 
     glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -578,21 +555,6 @@ void Tema1::Update(float deltaTimeSeconds)
     // ------------------------------------------------------------------------
     // Deferred rendering pass
     {
-        // Particle reflection frame buffer
-        // {
-        //     glBindFramebuffer(GL_FRAMEBUFFER, particles_framebuffer_object);
-        //     // Set the clear color for the color buffer
-        //     glClearColor(0, 0, 0, 1);
-        //     // Clears the color buffer (using the previously set color) and depth buffer
-        //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        //     glViewport(0, 0, 1024, 1024);
-
-        //     shader = shaders["Framebuffer"];
-        //     shader->Use();
-
-        // }
-
         // Reflexion Geometry pass
         {
             reflexionGeometryBuffer->Bind();
@@ -621,7 +583,9 @@ void Tema1::Update(float deltaTimeSeconds)
             shader = shaders["Render2Texture"];
             glUseProgram(shader->program);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("default.png")->GetTextureID());
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("ground.jpg")->GetTextureID());
+            glUniform1i(glGetUniformLocation(shader->program, "texture_terrain"), 0);
+            // glUniform1i(glGetUniformLocation(shader->program, "is_butterfly"), 1);
             for (auto &l : lights) {
                 model = glm::mat4(1);
                 model = glm::translate(glm::mat4(1), l.position);
@@ -727,7 +691,9 @@ void Tema1::Update(float deltaTimeSeconds)
             shader = shaders["Render2Texture"];
             glUseProgram(shader->program);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("default.png")->GetTextureID());
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("droplet")->GetTextureID());
+            glUniform1i(glGetUniformLocation(shader->program, "texture_terrain"), 0);
+            // glUniform1i(glGetUniformLocation(shader->program, "is_butterfly"), 1);
             for (auto &l : lights) {
                 model = glm::mat4(1);
                 model = glm::translate(glm::mat4(1), l.position);

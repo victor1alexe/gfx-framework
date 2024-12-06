@@ -46,7 +46,7 @@ namespace m2
 
         void LoadShader(const std::string &fileName);
 
-        void CreateFramebuffer(int width, int height);
+        void CreateFramebufferCubeMap(int width, int height, unsigned int &framebuffer_object, unsigned int &color_texture, unsigned int &depth_texture);
         void RenderMeshInstanced(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, int instances, const glm::vec3 &color = glm::vec3(1));
         Texture2D* CreateRandomTexture(unsigned int width, unsigned int height);
         // GLuint LoadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z);
