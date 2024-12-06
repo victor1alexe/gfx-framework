@@ -46,6 +46,7 @@ namespace m2
 
         void LoadShader(const std::string &fileName);
 
+        void CreateFramebuffer(int width, int height);
         void RenderMeshInstanced(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, int instances, const glm::vec3 &color = glm::vec3(1));
         Texture2D* CreateRandomTexture(unsigned int width, unsigned int height);
         // GLuint LoadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z);
@@ -67,6 +68,10 @@ namespace m2
         FrameBuffer *reflexionGeometryBuffer;
         FrameBuffer *reflexionLightAccumulationBuffer;
 
+        unsigned int particles_framebuffer_object;
+        unsigned int particles_color_texture;
+        unsigned int particles_depth_texture;
+
         std::vector<LightInfoTema1> lights;
 
         int outputType;
@@ -76,8 +81,8 @@ namespace m2
         int terrain_size_x = 8;
         int terrain_size_z = 8;
 
-        int terrain_resolution_x = 64;
-        int terrain_resolution_z = 64;
+        int terrain_resolution_x = 512;
+        int terrain_resolution_z = 512;
 
         GLenum polygon_mode = GL_FILL;
 

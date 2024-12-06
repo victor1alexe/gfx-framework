@@ -80,16 +80,93 @@ void Tema1::LoadShader(const std::string &name)
     }
 }
 
+void Tema1::CreateFramebuffer(int width, int height)
+{
+    // TODO(student): In this method, use the attributes
+    // 'framebuffer_object', 'color_texture'
+    // declared in lab6.h
+
+    // TODO(student): Generate and bind the framebuffer
+    glGenFramebuffers(1, &particles_framebuffer_object);
+    glBindFramebuffer(GL_FRAMEBUFFER, particles_framebuffer_object);
+
+
+
+    // TODO(student): Generate and bind the color texture
+    glGenTextures(1, &particles_color_texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, particles_color_texture);
+
+
+
+    // TODO(student): Initialize the color textures
+
+
+    if (particles_color_texture) {
+        //cubemap params
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        if (GLEW_EXT_texture_filter_anisotropic) {
+            float maxAnisotropy;
+
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
+        }
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        // Bind the color textures to the framebuffer as a color attachments
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, particles_color_texture, 0);
+
+        glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+        std::vector<GLenum> draw_textures;
+        draw_textures.push_back(GL_COLOR_ATTACHMENT0);
+        glDrawBuffers(draw_textures.size(), &draw_textures[0]);
+
+    }
+
+    // TODO(student): Generate and bind the depth texture
+    glGenTextures(1, &particles_depth_texture);
+    glBindTexture(GL_TEXTURE_2D, particles_depth_texture);
+
+
+    // TODO(student): Initialize the depth textures
+    if (particles_depth_texture) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        // Bind the depth textures to the framebuffer as a depth attachment
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, particles_depth_texture, 0);
+    }
+
+
+    if (particles_depth_texture) {
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, particles_depth_texture, 0);
+    }
+
+    glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 unsigned int Tema1::UploadCubeMapTexture(const std::string &pos_x, const std::string &pos_y, const std::string &pos_z, const std::string& neg_x, const std::string& neg_y, const std::string& neg_z)
 {
     int width, height, chn;
 
-    unsigned char *data_pos_x = stbi_load(pos_x.c_str(), &width, &height, &chn, 0);
-    unsigned char *data_pos_y = stbi_load(pos_y.c_str(), &width, &height, &chn, 0);
-    unsigned char *data_pos_z = stbi_load(pos_z.c_str(), &width, &height, &chn, 0);
-    unsigned char *data_neg_x = stbi_load(neg_x.c_str(), &width, &height, &chn, 0);
-    unsigned char *data_neg_y = stbi_load(neg_y.c_str(), &width, &height, &chn, 0);
-    unsigned char *data_neg_z = stbi_load(neg_z.c_str(), &width, &height, &chn, 0);
+    unsigned char *data_pos_x = stbi_load(pos_x.c_str(), &width, &height, &chn, STBI_rgb_alpha);
+    unsigned char *data_pos_y = stbi_load(pos_y.c_str(), &width, &height, &chn, STBI_rgb_alpha);
+    unsigned char *data_pos_z = stbi_load(pos_z.c_str(), &width, &height, &chn, STBI_rgb_alpha);
+    unsigned char *data_neg_x = stbi_load(neg_x.c_str(), &width, &height, &chn, STBI_rgb_alpha);
+    unsigned char *data_neg_y = stbi_load(neg_y.c_str(), &width, &height, &chn, STBI_rgb_alpha);
+    unsigned char *data_neg_z = stbi_load(neg_z.c_str(), &width, &height, &chn, STBI_rgb_alpha);
 
     unsigned int textureID = 0;
 
@@ -113,12 +190,12 @@ unsigned int Tema1::UploadCubeMapTexture(const std::string &pos_x, const std::st
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_x);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_x);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_y);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_y);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_z);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_z);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data_pos_x);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data_neg_x);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data_pos_y);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data_neg_y);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data_pos_z);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data_neg_z);
 
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
@@ -176,7 +253,7 @@ void Tema1::RenderSkybox(GLuint skyboxTextureID, glm::mat4 &view)
 
 void Tema1::ResetParticlesFire(float radius)
 {
-    unsigned int nrParticles = 100;
+    unsigned int nrParticles = 4096;
 
     particleEffectTema1 = new ParticleEffect<ParticleTema1>();
     particleEffectTema1->Generate(nrParticles, true);
@@ -343,7 +420,17 @@ void Tema1::Init()
         meshes[mesh->GetMeshID()] = mesh;
     }
 
-    std::string texture_path = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night");
+    // std::string texture_path = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_night");
+    // skyboxTextureID = UploadCubeMapTexture(
+    //     PATH_JOIN(texture_path, "pos_x.png"),
+    //     PATH_JOIN(texture_path, "pos_y.png"),
+    //     PATH_JOIN(texture_path, "pos_z.png"),
+    //     PATH_JOIN(texture_path, "neg_x.png"),
+    //     PATH_JOIN(texture_path, "neg_y.png"),
+    //     PATH_JOIN(texture_path, "neg_z.png")
+    // );
+
+    std::string texture_path = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "cubemap_custom");
     skyboxTextureID = UploadCubeMapTexture(
         PATH_JOIN(texture_path, "pos_x.png"),
         PATH_JOIN(texture_path, "pos_y.png"),
@@ -352,16 +439,6 @@ void Tema1::Init()
         PATH_JOIN(texture_path, "neg_y.png"),
         PATH_JOIN(texture_path, "neg_z.png")
     );
-
-    // std::string texture_path = PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "water_scene");
-    // skyboxTextureID = UploadCubeMapTexture(
-    //     PATH_JOIN(texture_path, "pos_x.jpg"),
-    //     PATH_JOIN(texture_path, "pos_y.jpg"),
-    //     PATH_JOIN(texture_path, "pos_z.jpg"),
-    //     PATH_JOIN(texture_path, "neg_x.jpg"),
-    //     PATH_JOIN(texture_path, "neg_y.jpg"),
-    //     PATH_JOIN(texture_path, "neg_z.jpg")
-    // );
 
     // std::cout << "Skybox texture ID: " << skyboxTextureID << std::endl;
     // Load skybox shader
@@ -392,6 +469,16 @@ void Tema1::Init()
         meshes["point"] = new Mesh("point");
         meshes["point"]->InitFromData(vertices, indices);
         meshes["point"]->SetDrawMode(GL_POINTS);
+    }
+
+    // Create a shader program for creating a CUBEMAP
+    {
+        Shader *shader = new Shader("Framebuffer");
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Framebuffer.VS.glsl"), GL_VERTEX_SHADER);
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Framebuffer.GS.glsl"), GL_GEOMETRY_SHADER);
+        shader->AddShader(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "tema1", "shaders", "Framebuffer.FS.glsl"), GL_FRAGMENT_SHADER);
+        shader->CreateAndLink();
+        shaders[shader->GetName()] = shader;
     }
 
     // Load reflection shader
@@ -444,10 +531,10 @@ void Tema1::Init()
     finalReflectionBuffer = new FrameBuffer();
     finalReflectionBuffer->Generate(resolution.x, resolution.y, 1, false);
 
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 20; ++i) {
         LightInfoTema1 lightInfo;
 
-        lightInfo.position = glm::vec3(Rand01() * 6 - 3, 2.5, Rand01() * 6 - 3);
+        lightInfo.position = glm::vec3(Rand01() * 8 - 4, 2.5, Rand01() * 8 - 4);
         lightInfo.color = glm::vec3(Rand01(), Rand01(), Rand01());
         lightInfo.radius = 3;
 
@@ -491,6 +578,21 @@ void Tema1::Update(float deltaTimeSeconds)
     // ------------------------------------------------------------------------
     // Deferred rendering pass
     {
+        // Particle reflection frame buffer
+        // {
+        //     glBindFramebuffer(GL_FRAMEBUFFER, particles_framebuffer_object);
+        //     // Set the clear color for the color buffer
+        //     glClearColor(0, 0, 0, 1);
+        //     // Clears the color buffer (using the previously set color) and depth buffer
+        //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        //     glViewport(0, 0, 1024, 1024);
+
+        //     shader = shaders["Framebuffer"];
+        //     shader->Use();
+
+        // }
+
         // Reflexion Geometry pass
         {
             reflexionGeometryBuffer->Bind();
@@ -504,6 +606,10 @@ void Tema1::Update(float deltaTimeSeconds)
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("heightmap")->GetTextureID());
             glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 1);
+            // Send the cubemap for reflections
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTextureID);
+            glUniform1i(glGetUniformLocation(shader->program, "texture_reflection"), 2);
             glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
             glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
             glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
@@ -520,7 +626,7 @@ void Tema1::Update(float deltaTimeSeconds)
                 model = glm::mat4(1);
                 model = glm::translate(glm::mat4(1), l.position);
                 // model = glm::scale(model, glm::vec3(0.2f));
-                model = glm::scale(model, glm::vec3(2.0f));
+                model = glm::scale(model, glm::vec3(4.0f));
                 RenderMeshCustomView(mesh, shader, model, reflected_view);
             }
 
@@ -604,6 +710,12 @@ void Tema1::Update(float deltaTimeSeconds)
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("heightmap")->GetTextureID());
             glUniform1i(glGetUniformLocation(shader->program, "heightmap"), 1);
+
+            // Send the cubemap for reflections
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTextureID);
+            glUniform1i(glGetUniformLocation(shader->program, "texture_reflection"), 2);
+
             glUniform3fv(glGetUniformLocation(shader->program, "generator_position"), 1, glm::value_ptr(generator_position));
             glUniform1f(glGetUniformLocation(shader->program, "deltaTime"), deltaTimeSeconds);
             glUniform1f(glGetUniformLocation(shader->program, "offset"), offset);
@@ -620,7 +732,7 @@ void Tema1::Update(float deltaTimeSeconds)
                 model = glm::mat4(1);
                 model = glm::translate(glm::mat4(1), l.position);
                 // model = glm::scale(model, glm::vec3(0.2f));
-                model = glm::scale(model, glm::vec3(2.0f));
+                model = glm::scale(model, glm::vec3(4.0f));
                 RenderMesh(mesh, shader, model);
             }
 

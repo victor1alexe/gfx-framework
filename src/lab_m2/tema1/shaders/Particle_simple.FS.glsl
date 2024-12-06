@@ -6,7 +6,8 @@ layout(location = 3) in vec3 world_position;
 layout(location = 4) in vec3 world_normal;
 
 // Uniform properties
-uniform sampler2D texture_1;
+uniform sampler2D droplet;
+uniform samplerCube texture_reflection;
 
 // Output
 layout(location = 0) out vec4 out_world_position;
@@ -23,12 +24,15 @@ void main()
 
     out_world_position = vec4(world_position, 1);
     out_world_normal = vec4(normalize(world_normal), 0);
-    out_color = texture(texture_1, text_coord);
+    out_color = texture(droplet, text_coord);
 
     if (out_color.a < 0.1)
     {
         discard;
     }
+
+    vec3 reflection = reflect(normalize(world_position), normalize(world_normal));
+    out_color = texture(texture_reflection, reflection);
 }
 
 
