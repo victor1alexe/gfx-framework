@@ -25,14 +25,14 @@
 
 std::string GetParentDir(const std::string &filePath)
 {
-    size_t pos = filePath.find_last_of("\\/");
+    const size_t pos = filePath.find_last_of("\\/");
     return (std::string::npos == pos) ? "." : filePath.substr(0, pos);
 }
 
 
 int main(int argc, char **argv)
 {
-    srand((unsigned int)time(NULL));
+    srand(static_cast<unsigned int>(time(nullptr)));
 
     // Create a window property structure
     WindowProperties wp;
@@ -44,9 +44,8 @@ int main(int argc, char **argv)
     (void)Engine::Init(wp);
 
     // Create a new 3D world and start running it
-    World *world = new m2::Tema1();
-    // World *world = new m2::Lab8();
-    
+    // World *world = new m2::Tema1();
+    World *world = new m2::Tema2();
 
 
     world->Init();

@@ -98,7 +98,7 @@ void Lab6::Init()
         PATH_JOIN(texturePath, "neg_y.png"),
         PATH_JOIN(texturePath, "neg_z.png"));
 
-    TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS), "characters", "archer", "Akai_E_Espiritu.fbm", "akai_diffuse.png");
+    TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "characters", "archer", "Akai_E_Espiritu.fbm"), "akai_diffuse.png");
 
     // Create the framebuffer on which the scene is rendered from the perspective of the mesh
     // Texture size must be cubic
@@ -174,7 +174,7 @@ void Lab6::Update(float deltaTimeSeconds)
             glUniformMatrix4fv(shader->loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projection));
 
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("Akai_E_Espiritu.fbm\\akai_diffuse.png")->GetTextureID());
+            glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("akai_diffuse.png")->GetTextureID());
             glUniform1i(glGetUniformLocation(shader->program, "texture_1"), 0);
 
             glUniform1i(glGetUniformLocation(shader->program, "cube_draw"), 0);
@@ -230,7 +230,7 @@ void Lab6::Update(float deltaTimeSeconds)
         glUniformMatrix4fv(shader->loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(camera->GetProjectionMatrix()));
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("Akai_E_Espiritu.fbm\\akai_diffuse.png")->GetTextureID());
+        glBindTexture(GL_TEXTURE_2D, TextureManager::GetTexture("akai_diffuse.png")->GetTextureID());
         glUniform1i(glGetUniformLocation(shader->program, "texture_1"), 0);
 
         meshes["archer"]->Render();
@@ -294,9 +294,9 @@ unsigned int Lab6::UploadCubeMapTexture(const std::string &pos_x, const std::str
     unsigned int textureID = 0;
     // TODO(student): Create the texture
     glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
     // TODO(student): Bind the texture
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
@@ -317,10 +317,10 @@ unsigned int Lab6::UploadCubeMapTexture(const std::string &pos_x, const std::str
 
     // TODO(student): Load texture information for each face
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_x);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_x);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_y);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_y);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pos_z);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_x);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_y);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data_neg_z);
 
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
@@ -350,16 +350,15 @@ void Lab6::CreateFramebuffer(int width, int height)
     glGenFramebuffers(1, &framebuffer_object);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_object);
 
-
-
     // TODO(student): Generate and bind the color texture
     glGenTextures(1, &color_texture);
     glBindTexture(GL_TEXTURE_CUBE_MAP, color_texture);
 
 
-
     // TODO(student): Initialize the color textures
-
+    for (unsigned int i = 0; i < 6; ++i) {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    }
 
     if (color_texture) {
         //cubemap params
@@ -397,14 +396,14 @@ void Lab6::CreateFramebuffer(int width, int height)
 
     // TODO(student): Initialize the depth textures
     if (depth_texture) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-        // Bind the depth textures to the framebuffer as a depth attachment
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_texture, 0);
     }
 
 
