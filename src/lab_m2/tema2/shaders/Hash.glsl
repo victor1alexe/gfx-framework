@@ -19,22 +19,16 @@ float grayscale(vec4 color)
 float hash(float a, float b, float c, float gray, float treshold)
 {
     if (gray < treshold)
-    {
         return 0.0;
-    }
 
     if (gray > 1.0 - treshold)
-    {
         return 1.0;
-    }
 
     return sin(a * gl_FragCoord.x + b * gl_FragCoord.y) > c ? 1 : 0;
 }
 
-
 void main()
 {
-
     float gray = grayscale(texture(color_texture, texture_coord));
 
     out_color1 = vec4(hash(200, 200, 0.5, gray, 0));

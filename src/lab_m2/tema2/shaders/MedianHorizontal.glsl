@@ -12,9 +12,8 @@ void main()
     vec2 texelSize = 1.0f / vec2(screenSize);
     vec4 sum = vec4(0);
 
-    for(int i = -12; i <= 12; i++) {
+    for(int i = -12; i <= 12; i++)
         sum += texture(color_texture, texture_coord + vec2(i, 0) * texelSize);
-    }
 
     out_color = sum / 25;
 }

@@ -29,23 +29,19 @@ void Tema2::Init()
 {
     // init frame buffers
     medianHorizontal = new FrameBuffer();
-    medianHorizontal->Generate(window->GetResolution().x, window->GetResolution().y, 1, false);
-
     medianVertical = new FrameBuffer();
-    medianVertical->Generate(window->GetResolution().x, window->GetResolution().y, 1, false);
-
     hash = new FrameBuffer();
-    hash->Generate(window->GetResolution().x, window->GetResolution().y, 4, false);
-
     sobel = new FrameBuffer();
-    sobel->Generate(window->GetResolution().x, window->GetResolution().y, 1, false);
-
     final = new FrameBuffer();
+
+    medianHorizontal->Generate(window->GetResolution().x, window->GetResolution().y, 1, false);
+    medianVertical->Generate(window->GetResolution().x, window->GetResolution().y, 1, false);
+    hash->Generate(window->GetResolution().x, window->GetResolution().y, 4, false);
+    sobel->Generate(window->GetResolution().x, window->GetResolution().y, 1, false);
     final->Generate(window->GetResolution().x, window->GetResolution().y, 1, false);
 
-    // Load default texture fore imagine processing
-    // originalImage = TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES, "earth.png"), "earth", "image", true, true);
-    originalImage = TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "Tema1", "earth.png"), "earth", "image", true, true);
+    // originalImage = TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "Tema2", "earth.png"), "earth", "image", true, true);
+    originalImage = TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES, "earth.png"), nullptr, "image", true, true);
 
     {
         const auto mesh = new Mesh("quad");
@@ -126,16 +122,13 @@ void Tema2::Update(float deltaTimeSeconds)
         ClearScreen();
 
         const auto shader = shaders["MedianFilterHorizontal"];
-        shader->Use();
-
-        const GLint screenSize_loc = shader->GetUniformLocation("screenSize");
         const auto resolution = window->GetResolution();
-        glUniform2i(screenSize_loc, resolution.x, resolution.y);
 
-        const auto textureImage = originalImage;
-        const int locTexture = shader->GetUniformLocation("color_texture");
-        textureImage->BindToTextureUnit(GL_TEXTURE0);
-        glUniform1i(locTexture, 0);
+        shader->Use();
+        originalImage->BindToTextureUnit(GL_TEXTURE0);
+
+        glUniform2i(shader->GetUniformLocation("screenSize"), resolution.x, resolution.y);
+        glUniform1i(shader->GetUniformLocation("color_texture"), 0);
 
         RenderMesh(meshes["quad"], shader, glm::mat4(1));
     }
@@ -146,16 +139,13 @@ void Tema2::Update(float deltaTimeSeconds)
         ClearScreen();
 
         const auto shader = shaders["MedianFilterVertical"];
-        shader->Use();
-
-        const int screenSize_loc = shader->GetUniformLocation("screenSize");
         const auto resolution = window->GetResolution();
-        glUniform2i(screenSize_loc, resolution.x, resolution.y);
 
-        const int locTexture = shader->GetUniformLocation("color_texture");
-        const auto textureImage = medianHorizontal->GetTexture(0);
-        textureImage->BindToTextureUnit(GL_TEXTURE0);
-        glUniform1i(locTexture, 0);
+        shader->Use();
+        medianHorizontal->GetTexture(0)->BindToTextureUnit(GL_TEXTURE0);
+
+        glUniform2i(shader->GetUniformLocation("screenSize"), resolution.x, resolution.y);
+        glUniform1i(shader->GetUniformLocation("color_texture"), 0);
 
         RenderMesh(meshes["quad"], shader, glm::mat4(1));
     }
@@ -166,16 +156,13 @@ void Tema2::Update(float deltaTimeSeconds)
         ClearScreen();
 
         const auto shader = shaders["Hash"];
-        shader->Use();
-
-        const int screenSize_loc = shader->GetUniformLocation("screenSize");
         const auto resolution = window->GetResolution();
-        glUniform2i(screenSize_loc, resolution.x, resolution.y);
 
-        const int locTexture = shader->GetUniformLocation("color_texture");
-        const auto textureImage = medianVertical->GetTexture(0);
-        textureImage->BindToTextureUnit(GL_TEXTURE0);
-        glUniform1i(locTexture, 0);
+        shader->Use();
+        medianVertical->GetTexture(0)->BindToTextureUnit(GL_TEXTURE0);
+
+        glUniform2i(shader->GetUniformLocation("screenSize"), resolution.x, resolution.y);
+        glUniform1i(shader->GetUniformLocation("color_texture"), 0);
 
         RenderMesh(meshes["quad"], shader, glm::mat4(1));
     }
@@ -186,46 +173,37 @@ void Tema2::Update(float deltaTimeSeconds)
         ClearScreen();
 
         const auto shader = shaders["Sobel"];
-        shader->Use();
-
-        const int screenSize_loc = shader->GetUniformLocation("screenSize");
         const auto resolution = window->GetResolution();
-        glUniform2i(screenSize_loc, resolution.x, resolution.y);
 
-        const int locTexture = shader->GetUniformLocation("color_texture");
-        const auto textureImage = originalImage;
-        textureImage->BindToTextureUnit(GL_TEXTURE0);
-        glUniform1i(locTexture, 0);
-
-        RenderMesh(meshes["quad"], shader, glm::mat4(1));
-    }
-
-    // Combine pass
-    {
-        final->Bind();
-        ClearScreen();
-
-        const auto shader = shaders["Final"];
         shader->Use();
+        originalImage->BindToTextureUnit(GL_TEXTURE0);
 
-        const int screenSize_loc = shader->GetUniformLocation("screenSize");
-        const auto resolution = window->GetResolution();
-        glUniform2i(screenSize_loc, resolution.x, resolution.y);
-
-        int locTexture = shader->GetUniformLocation("textureImage1");
-        auto textureImage = hash->GetTexture(3);
-        textureImage->BindToTextureUnit(GL_TEXTURE0);
-        glUniform1i(locTexture, 0);
-
-        locTexture = shader->GetUniformLocation("textureImage2");
-        textureImage = sobel->GetTexture(0);
-        textureImage->BindToTextureUnit(GL_TEXTURE1);
-        glUniform1i(locTexture, 1);
+        glUniform2i(shader->GetUniformLocation("screenSize"), resolution.x, resolution.y);
+        glUniform1i(shader->GetUniformLocation("color_texture"), 0);
 
         RenderMesh(meshes["quad"], shader, glm::mat4(1));
     }
 
     // Final pass
+    {
+        final->Bind();
+        ClearScreen();
+
+        const auto shader = shaders["Final"];
+        const auto resolution = window->GetResolution();
+
+        shader->Use();
+        hash->GetTexture(3)->BindToTextureUnit(GL_TEXTURE0);
+        sobel->GetTexture(0)->BindToTextureUnit(GL_TEXTURE1);
+
+        glUniform2i(shader->GetUniformLocation("screenSize"), resolution.x, resolution.y);
+        glUniform1i(shader->GetUniformLocation("textureImage1"), 0);
+        glUniform1i(shader->GetUniformLocation("textureImage2"), 1);
+
+        RenderMesh(meshes["quad"], shader, glm::mat4(1));
+    }
+
+    // Default framebuffer pass
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         ClearScreen();
@@ -233,10 +211,8 @@ void Tema2::Update(float deltaTimeSeconds)
         const auto shader = shaders["FS"];
         shader->Use();
 
-        const int locTexture = shader->GetUniformLocation("color_texture");
-        const auto textureImage = final->GetTexture(0);
-        textureImage->BindToTextureUnit(GL_TEXTURE0);
-        glUniform1i(locTexture, 0);
+        final->GetTexture(0)->BindToTextureUnit(GL_TEXTURE0);
+        glUniform1i(shader->GetUniformLocation("color_texture"), 0);
 
         RenderMesh(meshes["quad"], shader, glm::mat4(1));
     }
