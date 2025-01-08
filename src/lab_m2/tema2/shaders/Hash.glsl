@@ -18,10 +18,13 @@ float grayscale(vec4 color)
 // sin(a⋅x+b⋅y)>c
 float hash(float a, float b, float c, float gray, float treshold)
 {
-    if (gray < treshold)
-        return 0.0;
+//    if (gray < treshold)
+//        return 0.0;
+//
+//    if (gray > 1.0 - treshold)
+//        return 1.0;
 
-    if (gray > 1.0 - treshold)
+    if (gray > treshold)
         return 1.0;
 
     return sin(a * gl_FragCoord.x + b * gl_FragCoord.y) > c ? 1 : 0;
@@ -31,10 +34,14 @@ void main()
 {
     float gray = grayscale(texture(color_texture, texture_coord));
 
-    out_color1 = vec4(hash(200, 200, 0.5, gray, 0));
-    out_color2 = vec4(hash(-150, 150, 0.8, gray, 0.07));
-    out_color3 = vec4(hash(1, -2, 0.1, gray, 0.2));
+    float hash1 = hash(-100, 100, 0.99, gray, 0.11);
+    float hash2 = hash(70, 70, 0.01, gray, 0.63);
+    float hash3 = hash(-400, 400, 0.01, gray, 0.45);
 
-    out_color_final = clamp(out_color1 + out_color2 + out_color3, 0, 1);
+    out_color1 = vec4(hash1);
+    out_color2 = vec4(hash2);
+    out_color3 = vec4(hash3);
+
+    out_color_final = clamp(vec4(hash1 * hash2 * hash3), 0.0, 1.0);
 }
 

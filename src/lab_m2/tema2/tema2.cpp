@@ -40,8 +40,8 @@ void Tema2::Init()
     sobel->Generate(window->GetResolution().x, window->GetResolution().y, 1, false);
     final->Generate(window->GetResolution().x, window->GetResolution().y, 1, false);
 
-    // originalImage = TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "Tema2", "earth.png"), "earth", "image", true, true);
-    originalImage = TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES, "earth.png"), nullptr, "image", true, true);
+    // originalImage = TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES, "earth.png"), nullptr, "image", true, true);
+    originalImage = TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES, "cube", "pos_x.png"), nullptr, "image", true, true);
     displayedImage = final->GetTexture(0);
 
     {
