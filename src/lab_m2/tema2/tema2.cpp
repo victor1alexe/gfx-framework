@@ -42,6 +42,7 @@ void Tema2::Init()
 
     // originalImage = TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, SOURCE_PATH::M2, "Tema2", "earth.png"), "earth", "image", true, true);
     originalImage = TextureManager::LoadTexture(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES, "earth.png"), nullptr, "image", true, true);
+    displayedImage = final->GetTexture(0);
 
     {
         const auto mesh = new Mesh("quad");
@@ -211,7 +212,7 @@ void Tema2::Update(float deltaTimeSeconds)
         const auto shader = shaders["FS"];
         shader->Use();
 
-        final->GetTexture(0)->BindToTextureUnit(GL_TEXTURE0);
+        displayedImage->BindToTextureUnit(GL_TEXTURE0);
         glUniform1i(shader->GetUniformLocation("color_texture"), 0);
 
         RenderMesh(meshes["quad"], shader, glm::mat4(1));
@@ -309,6 +310,41 @@ void Tema2::OnKeyPress(const int key, int mods)
     if (key == GLFW_KEY_F || key == GLFW_KEY_ENTER || key == GLFW_KEY_SPACE)
     {
         OpenDialog();
+    }
+
+    if (key - GLFW_KEY_0 >= 0 && key < GLFW_KEY_9)
+    {
+        const int outputMode = key - GLFW_KEY_0;
+
+        switch (outputMode) {
+        case 0:
+            displayedImage = originalImage;
+            break;
+        case 1:
+            displayedImage = sobel->GetTexture(0);
+            break;
+        case 2:
+            displayedImage = medianHorizontal->GetTexture(0);
+            break;
+        case 3:
+            displayedImage = medianVertical->GetTexture(0);
+            break;
+        case 4:
+            displayedImage = hash->GetTexture(0);
+            break;
+        case 5:
+            displayedImage = hash->GetTexture(1);
+            break;
+        case 6:
+            displayedImage = hash->GetTexture(2);
+            break;
+        case 7:
+            displayedImage = hash->GetTexture(3);
+            break;
+        default:
+            displayedImage = final->GetTexture(0);
+            break;
+        }
     }
 }
 
